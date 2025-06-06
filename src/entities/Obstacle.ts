@@ -7,7 +7,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.Body;
 
   private weight = 0;
-  private maxSpeed = 300;
+  private maxSpeed = 200;
   private _type: "hookable" | "damaging"
 
   constructor(scene: Phaser.Scene, options:{

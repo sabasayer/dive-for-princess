@@ -71,7 +71,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     graphics.destroy();
   }
 
-  update(obstacles?: Obstacle[]) {
+  update(delta:number, obstacles?: Obstacle[]) {
     if(this.isJumping) return
 
 
@@ -89,17 +89,17 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
 
     //this.handleObstacleJump()
 
-    this.handleHookSystem(obstacles)
+    this.handleHookSystem(delta, obstacles)
     this.updateDebugInfo()
   }
 
-  private handleHookSystem(obstacles?:Obstacle[]){
-    this.hookSystem.update(obstacles)
+  private handleHookSystem(delta:number, obstacles?:Obstacle[]){
+    this.hookSystem.update(delta,obstacles)
     this.handleHookTargetSwitch()
-    this.handleHook()
+    this.handleHook(delta)
     this.handleHookRelease()
 
-    if(!this.hookSystem.isHooking){
+    if(!["hookExtending", "hooking"].includes(this.hookSystem.state)){
       this.speedBeforeHook = this.body.velocity.y
     }
 
@@ -117,7 +117,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private handleHook(){
+  private handleHook(delta:number){
     if(!this.isActionPressed()) return
 
     const hookPosition = this.hookSystem.currentTargetHookPosition
@@ -126,18 +126,19 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
 
     const newVelocity = this.hookSystem.calculateHookVelocity(this.hookSpeed)
 
-    console.log({newVelocity})
-
     if(!newVelocity) return
 
+    const reachedToTarget = this.hookSystem.hook(delta)
+    
+    if(!reachedToTarget) return
+    
     const newVelocityY = newVelocity.y + this.speedBeforeHook
 
     this.body.setVelocity(newVelocity.x, newVelocityY)
-    this.hookSystem.hook()
   }
 
+
   private handleHookRelease(){
-    if(!this.hookSystem.isHooking) return
     if(!this.isActionReleased()) return
 
     this.hookSystem.release()
@@ -148,7 +149,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     if(!this.cursors) return
 
     const direction = Phaser.Input.Keyboard.JustDown(this.cursors.left) ? "left" : 
-    Phaser.Input.Keyboard.JustDown(this.cursors.right) ? "right" : undefined
+    Phaser.Input.Keyboard.JustDown(this.cursors.right) ? "right" : Phaser.Input.Keyboard.JustDown(this.cursors.up) ? "up" : Phaser.Input.Keyboard.JustDown(this.cursors.down) ? "down" : undefined
 
     if(direction){
       this.hookSystem.switchTarget(direction)
@@ -205,7 +206,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateDebugInfo(){
     if(this.debugText){
-      this.debugText.setText(`Speed: ${this.getCurrentSpeed()}`)
+      this.debugText.setText(`Speed: ${this.getCurrentSpeed()} Hook State: ${this.hookSystem.state}`)
     }
   }
 } 

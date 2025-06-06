@@ -5,7 +5,7 @@ import { Obstacle, createObstacles } from '../entities/Obstacle';
 
 export default class MainScene extends Phaser.Scene {
   private player?: Player
-  private groundY = 5000
+  private groundY = 50000
   private tileSize = 16
   private obstacles?: Phaser.Physics.Arcade.Group
   
@@ -29,9 +29,9 @@ export default class MainScene extends Phaser.Scene {
     this.createCollider()
   }
 
-  update(){
+  update(_:number,delta:number){
     const obstacles = this.obstacles?.getChildren()
-    this.player?.update(obstacles as Obstacle[])
+    this.player?.update(delta, obstacles as Obstacle[])
     obstacles?.forEach(obstacle => {
       obstacle.update()
     })
@@ -69,7 +69,7 @@ export default class MainScene extends Phaser.Scene {
         groundY: this.groundY,
         gameWidth: this.gameWidth,
         player: this.player as Player,
-        totalObstacles: 100,
+        totalObstacles: 1000,
         minGap: 10,
         maxGap: 100
       })

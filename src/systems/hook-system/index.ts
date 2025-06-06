@@ -10,7 +10,7 @@ export class HookSystem {
     private player:Player
     private _currentTarget?:Obstacle
     private hookableObstacles:Obstacle[] = []
-    public isHooking = false
+    public state: "idle" | "hookExtending" | "hooking" | "hookPulling" | "hooked" = "idle"
     private hookGraphics!: Hook
 
 
@@ -24,7 +24,8 @@ export class HookSystem {
         this.hookRange = options.hookRange
         this.hookGraphics = new Hook({
             scene: this.scene,
-            player: this.player
+            player: this.player,
+            hookExtendSpeed: 50
         })
     }
 
@@ -44,13 +45,19 @@ export class HookSystem {
         })
     }
     
-    update(obstacles?: Obstacle[]){
+    update(delta:number, obstacles?: Obstacle[]){
+        this.calculateTarget(obstacles)
+        this.hookPulling(delta)
+    }
+
+    private calculateTarget(obstacles?: Obstacle[]){
         if(!obstacles) return this.clear()
 
         this.hookableObstacles = this.findHookableObstacles(obstacles)
 
         this.setDefaultTarget()
     }
+
 
     private clear(){
         this.hookableObstacles = []
@@ -73,25 +80,35 @@ export class HookSystem {
     }
 
     
-     switchTarget(direction: "left" | "right"){
+     switchTarget(direction: "left" | "right" | "up"){
+        if(this.state !== "idle") return
+        
         if(!this.hookableObstacles.length) return
 
-        if(!this._currentTarget) return
+        const currentTarget = this._currentTarget
+
+        if(!currentTarget) return
 
         const obstacles = this.hookableObstacles.toSorted((a, b) => {
             return a.x - b.x
         })
 
-        const currentIndex = obstacles.indexOf(this._currentTarget)
-
         if(direction === "left"){
-            let newIndex = currentIndex - 1
-            if(newIndex < 0) newIndex = obstacles.length - 1
-            this._currentTarget = obstacles[newIndex]
-        }else{
-            let newIndex = currentIndex + 1
-            if(newIndex >= obstacles.length) newIndex = 0
-            this._currentTarget = obstacles[newIndex]
+            const nonUpObstacles = obstacles.filter(obstacle => obstacle.y + obstacle.height >= this.player.y && obstacle.x <= this.player.x && obstacle !== currentTarget)
+
+            if(nonUpObstacles.length) {
+                this._currentTarget = nonUpObstacles[0]
+            }
+        }else if(direction === "right"){
+            const nonUpObstacles = obstacles.filter(obstacle => obstacle.y + obstacle.height >= this.player.y && obstacle.x > this.player.x && obstacle !== currentTarget)
+
+            if(nonUpObstacles.length) {
+                this._currentTarget = nonUpObstacles[0]
+            }
+        }else if(direction === "up"){
+            const upObstacles = obstacles.filter(obstacle => obstacle.y + obstacle.height < this.player.y && obstacle !== currentTarget)
+            if(!upObstacles.length) return
+            this._currentTarget = upObstacles[0]
         }
     }
 
@@ -109,18 +126,32 @@ export class HookSystem {
         
     }
 
-    hook(){
+    hook(delta:number){
         const hookPosition = this.currentTargetHookPosition
 
         if(!hookPosition) return
 
-        this.hookGraphics.show({x: hookPosition.x, y: hookPosition.y})
-        this.isHooking = true
+        const reachedToTarget = this.hookGraphics.extendHook({targetPosition: hookPosition, delta})
+        this.state = reachedToTarget ? "hooking" : "hookExtending"
+
+        return reachedToTarget
     }
 
     release(){
+        if(!["hooking", "hookExtending"].includes(this.state)) return
+
         this.hookGraphics.hide()
-        this.isHooking = false
+
+        this.state = "hookPulling"
+    }
+
+    hookPulling(delta:number){
+        if(this.state !== "hookPulling") return
+
+        const reachedToPlayer = this.hookGraphics.retractHook({delta})
+        this.state = reachedToPlayer ? "idle" : "hookPulling"
+
+        return reachedToPlayer
     }
 
     get currentTarget(){
