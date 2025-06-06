@@ -11,17 +11,20 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   private actionKey?: Phaser.Input.Keyboard.Key;
   private horizontalSpeed = 20;
   private jumpSpeed = 200;
-  private maxSpeed = 100;
+  private maxSpeed = 300;
   private debugText?: Phaser.GameObjects.Text;
   private playerDimensions = {
     width: 16,
     height: 16
   }
+  private hookRange = 150
   private isOnObstacle = false;
   private isJumping = false;
   private obstacle?: Obstacle;
   private hookSystem!: HookSystem
   private hookIndicator!: HookIndicator
+  private hookSpeed = 200
+  private speedBeforeHook = 0
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'player');
@@ -39,7 +42,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     this.hookSystem = new HookSystem({
       scene: this.scene,
       player: this,
-      hookRange: 500
+      hookRange: this.hookRange
     })
     this.hookIndicator = new HookIndicator({
       scene: this.scene
@@ -71,7 +74,6 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   update(obstacles?: Obstacle[]) {
     if(this.isJumping) return
 
-    this.handleHookSystem(obstacles)
 
     if (this.cursors?.left?.isDown) {
       this.body.setVelocityX(-this.horizontalSpeed);
@@ -82,31 +84,72 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if(this.body.velocity.y > this.maxSpeed) {
-      //this.body.setVelocityY(this.maxSpeed);
+      this.body.setVelocityY(this.maxSpeed);
     }
 
-    this.handleObstacleJump()
+    //this.handleObstacleJump()
 
+    this.handleHookSystem(obstacles)
     this.updateDebugInfo()
   }
 
   private handleHookSystem(obstacles?:Obstacle[]){
     this.hookSystem.update(obstacles)
-    //this.handleHookTargetSwitch()
+    this.handleHookTargetSwitch()
+    this.handleHook()
+    this.handleHookRelease()
+
+    if(!this.hookSystem.isHooking){
+      this.speedBeforeHook = this.body.velocity.y
+    }
 
     const currentTarget = this.hookSystem.currentTarget
 
     if(currentTarget){
       //handle hook indicator
-      this.hookIndicator.show(this,currentTarget)
+      const position = this.hookSystem.currentTargetHookPosition
+      if(position){
+        this.hookIndicator.show(position)
+      }
     }
     else{
       this.hookIndicator.hide()
     }
   }
 
+  private handleHook(){
+    if(!this.isActionPressed()) return
+
+    const hookPosition = this.hookSystem.currentTargetHookPosition
+
+    if(!hookPosition) return
+
+    const newVelocity = this.hookSystem.calculateHookVelocity(this.hookSpeed)
+
+    console.log({newVelocity})
+
+    if(!newVelocity) return
+
+    const newVelocityY = newVelocity.y + this.speedBeforeHook
+
+    this.body.setVelocity(newVelocity.x, newVelocityY)
+    this.hookSystem.hook()
+  }
+
+  private handleHookRelease(){
+    if(!this.hookSystem.isHooking) return
+    if(!this.isActionReleased()) return
+
+    this.hookSystem.release()
+  }
+
+
   private handleHookTargetSwitch(){
-    const direction = this.cursors?.left?.isDown ? "left" : this.cursors?.right?.isDown ? "right" : undefined
+    if(!this.cursors) return
+
+    const direction = Phaser.Input.Keyboard.JustDown(this.cursors.left) ? "left" : 
+    Phaser.Input.Keyboard.JustDown(this.cursors.right) ? "right" : undefined
+
     if(direction){
       this.hookSystem.switchTarget(direction)
     }
@@ -116,12 +159,16 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     return this.actionKey?.isDown ?? false;
   }
 
+  isActionReleased(): boolean {
+    return this.actionKey?.isUp ?? false;
+  }
+
   hasHitGround(groundY: number): boolean {
     return this.y > groundY;
   }
 
   getCurrentSpeed(): number {
-    return Math.abs(this.body.velocity.y);
+    return Math.round(Math.abs(this.body.velocity.y));
   }
 
   onObstacle(obstacle: Obstacle){

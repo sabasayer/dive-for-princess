@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import type { Player } from "../../entities/Player";
 import type { Obstacle } from "../../entities/Obstacle";
+import  { Hook } from "./hook";
 
 export class HookSystem { 
     private scene: Phaser.Scene
@@ -9,6 +10,9 @@ export class HookSystem {
     private player:Player
     private _currentTarget?:Obstacle
     private hookableObstacles:Obstacle[] = []
+    public isHooking = false
+    private hookGraphics!: Hook
+
 
     constructor(options:{
         scene: Phaser.Scene,
@@ -18,6 +22,10 @@ export class HookSystem {
         this.scene = options.scene
         this.player = options.player
         this.hookRange = options.hookRange
+        this.hookGraphics = new Hook({
+            scene: this.scene,
+            player: this.player
+        })
     }
 
     private findHookableObstacles(obstacles: Obstacle[]):Obstacle[] {
@@ -68,22 +76,76 @@ export class HookSystem {
      switchTarget(direction: "left" | "right"){
         if(!this.hookableObstacles.length) return
 
-        const currentIndex = this._currentTarget ? this.hookableObstacles.indexOf(this._currentTarget) : -1
+        if(!this._currentTarget) return
 
-        if(currentIndex === -1) return
+        const obstacles = this.hookableObstacles.toSorted((a, b) => {
+            return a.x - b.x
+        })
+
+        const currentIndex = obstacles.indexOf(this._currentTarget)
 
         if(direction === "left"){
             let newIndex = currentIndex - 1
-            if(newIndex < 0) newIndex = this.hookableObstacles.length - 1
-            this._currentTarget = this.hookableObstacles[newIndex]
+            if(newIndex < 0) newIndex = obstacles.length - 1
+            this._currentTarget = obstacles[newIndex]
         }else{
             let newIndex = currentIndex + 1
-            if(newIndex >= this.hookableObstacles.length) newIndex = 0
-            this._currentTarget = this.hookableObstacles[newIndex]
+            if(newIndex >= obstacles.length) newIndex = 0
+            this._currentTarget = obstacles[newIndex]
         }
+    }
+
+    calculateHookVelocity(hookSpeed:number){
+        const hookPosition = this.currentTargetHookPosition
+
+        if(!hookPosition) return
+
+        const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, hookPosition.x, hookPosition.y)
+
+        const velocityX = hookSpeed * Math.cos(angle)
+        const velocityY = hookSpeed * Math.sin(angle)
+
+        return { x: velocityX, y: velocityY }
+        
+    }
+
+    hook(){
+        const hookPosition = this.currentTargetHookPosition
+
+        if(!hookPosition) return
+
+        this.hookGraphics.show({x: hookPosition.x, y: hookPosition.y})
+        this.isHooking = true
+    }
+
+    release(){
+        this.hookGraphics.hide()
+        this.isHooking = false
     }
 
     get currentTarget(){
         return this._currentTarget
     }
+
+    get currentTargetHookPosition(){
+        if(!this._currentTarget) return undefined
+
+        const target = this._currentTarget
+
+        const targetActualWidth = target.width * target.scaleX
+        const targetActualHeight = target.height * target.scaleY
+
+        const targetBounds = {
+            left: target.x,
+            right: target.x + targetActualWidth,
+            top: target.y,
+            bottom: target.y + targetActualHeight
+        }
+
+        const closestX = Phaser.Math.Clamp(this.player.x, targetBounds.left, targetBounds.right)
+        const closestY = Phaser.Math.Clamp(this.player.y, targetBounds.top, targetBounds.bottom)
+
+        return { x: closestX, y: closestY }
+    }
+
 }

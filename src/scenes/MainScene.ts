@@ -5,7 +5,7 @@ import { Obstacle, createObstacles } from '../entities/Obstacle';
 
 export default class MainScene extends Phaser.Scene {
   private player?: Player
-  private groundY = 2000
+  private groundY = 5000
   private tileSize = 16
   private obstacles?: Phaser.Physics.Arcade.Group
   
@@ -63,7 +63,16 @@ export default class MainScene extends Phaser.Scene {
 
   // create random obstacles from the top of the game to the groundY with some random gap
   private createObstacles(){
-    this.obstacles = createObstacles(this,this.groundY,this.gameWidth)
+    this.obstacles = createObstacles(
+      {
+        scene: this,
+        groundY: this.groundY,
+        gameWidth: this.gameWidth,
+        player: this.player as Player,
+        totalObstacles: 100,
+        minGap: 10,
+        maxGap: 100
+      })
   }
 
 
