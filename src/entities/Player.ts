@@ -25,6 +25,13 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   private hookIndicator!: HookIndicator
   private hookSpeed = 200
   private speedBeforeHook = 0
+  private bounceSpeed = {
+    x: 100,
+    y: 20
+  }
+  private playerState: "idle" | "bounce" = "idle"
+  private latestXVelocity = 0
+  private latestYVelocity = 0
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'player');
@@ -42,7 +49,8 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     this.hookSystem = new HookSystem({
       scene: this.scene,
       player: this,
-      hookRange: this.hookRange
+      hookRange: this.hookRange,
+      cooldown: 1000
     })
     this.hookIndicator = new HookIndicator({
       scene: this.scene
@@ -72,36 +80,39 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(delta:number, obstacles?: Obstacle[]) {
-    if(this.isJumping) return
-
+    if(this.playerState === "bounce") return
 
     if (this.cursors?.left?.isDown) {
       this.body.setVelocityX(-this.horizontalSpeed);
+      this.latestXVelocity = this.body.velocity.x
     } else if (this.cursors?.right?.isDown) {
       this.body.setVelocityX(this.horizontalSpeed);
+      this.latestXVelocity = this.body.velocity.x
     } else {
       this.body.setVelocityX(0);
+      this.latestXVelocity = 0
     }
 
     if(this.body.velocity.y > this.maxSpeed) {
       this.body.setVelocityY(this.maxSpeed);
     }
 
+    if(this.body.velocity.y !== 0){
+      this.latestYVelocity = this.body.velocity.y
+    }
+
     //this.handleObstacleJump()
 
     this.handleHookSystem(delta, obstacles)
     this.updateDebugInfo()
+
   }
 
   private handleHookSystem(delta:number, obstacles?:Obstacle[]){
     this.hookSystem.update(delta,obstacles)
     this.handleHookTargetSwitch()
-    this.handleHook(delta)
-    this.handleHookRelease()
-
-    if(!["hookExtending", "hooking"].includes(this.hookSystem.state)){
-      this.speedBeforeHook = this.body.velocity.y
-    }
+    this.handleHookThrow()
+    this.handleHooking(delta)
 
     const currentTarget = this.hookSystem.currentTarget
 
@@ -117,31 +128,31 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private handleHook(delta:number){
+  private handleHookThrow(){
     if(!this.isActionPressed()) return
 
     const hookPosition = this.hookSystem.currentTargetHookPosition
 
     if(!hookPosition) return
 
+   this.hookSystem.throwHook()
+    
+  }
+
+  private handleHooking(delta:number){
+    this.hookSystem.handleHookExtending(delta)
+
+    if(this.hookSystem.state !== "hooking") return
+
     const newVelocity = this.hookSystem.calculateHookVelocity(this.hookSpeed)
 
     if(!newVelocity) return
 
-    const reachedToTarget = this.hookSystem.hook(delta)
-    
-    if(!reachedToTarget) return
+    console.log("hooking",newVelocity)
     
     const newVelocityY = newVelocity.y + this.speedBeforeHook
 
     this.body.setVelocity(newVelocity.x, newVelocityY)
-  }
-
-
-  private handleHookRelease(){
-    if(!this.isActionReleased()) return
-
-    this.hookSystem.release()
   }
 
 
@@ -172,27 +183,82 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     return Math.round(Math.abs(this.body.velocity.y));
   }
 
-  onObstacle(obstacle: Obstacle){
-    this.setVelocityY(this.getCurrentSpeed()/2)
-    this.isOnObstacle = true;
-    this.obstacle = obstacle;
+  bounceFromObstacle(obstacle: Obstacle){
+    if(this.playerState === "bounce") return
+
+    this.hookSystem.finishHooking()
+    const collisionPoints = this.getCollisionPoints(obstacle)
+    //pause the game
+
+    if(collisionPoints.length === 0) return
+
+    const playerBounds = this.getBounds()
+    //this.scene.game.pause()
+
+    const firstPoint = collisionPoints[0]
+    const secondPoint = collisionPoints[1]
+
+    let collisionCorner=""
+    const playerRight = playerBounds.x + playerBounds.width
+    const playerBottom = playerBounds.y + playerBounds.height
+
+    const velocityX = this.latestXVelocity
+    const velocityY = this.latestYVelocity
+
+    
+    if(firstPoint.y >= playerBottom && secondPoint.y >= playerBottom){
+      collisionCorner = "bottom"
+    }
+    else if(firstPoint.y <= playerBounds.y && secondPoint.y <= playerBounds.y){
+      collisionCorner = "top"
+    }
+
+    if(firstPoint.x >= playerRight && secondPoint.x >= playerRight){
+      collisionCorner = "right"
+    }
+    else if(firstPoint.x <= playerBounds.x && secondPoint.x <= playerBounds.x){
+      collisionCorner = "left"
+    }
+
+    console.log({collisionPoints,playerBounds, velocityX, velocityY, collisionCorner})
+
+
+    if(collisionCorner === "bottom"){
+      // just bounce up and keep the horizontal velocity
+      this.body.setVelocityX(velocityX)
+      this.body.setVelocityY(-this.bounceSpeed.y+ velocityY)
+    }
+
+    if(collisionCorner === "top"){
+      // just dive down and keep the horizontal velocity
+      this.body.setVelocityX(velocityX)
+      this.body.setVelocityY(this.bounceSpeed.y + velocityY)
+    }
+
+    if(collisionCorner === "left"){
+      // just dive down and keep the horizontal velocity
+      this.body.setVelocityX(this.bounceSpeed.x)
+    }
+
+    if(collisionCorner === "right"){
+      // just dive down and keep the horizontal velocity
+      this.body.setVelocityX(-this.bounceSpeed.x)
+    }
+
+    this.playerState = "bounce"
+    this.scene.time.delayedCall(100, () => {
+      this.playerState = "idle"
+    })
   }
 
-  private handleObstacleJump(){
-    if(!this.isOnObstacle || !this.obstacle || this.isJumping) return
-
-    if(!this.isActionPressed()) return
+  getCollisionPoints(obstacle: Obstacle): { x: number, y: number }[] {
+    const playerBounds = this.getBounds();
+    const obstacleBounds = obstacle.getBounds();
     
-    this.isJumping = true;
-    const directionToObstacle = this.obstacle.x - this.x
-    const newVelocity = directionToObstacle > 0 ? -this.jumpSpeed : this.jumpSpeed
-    this.body.setVelocityX(newVelocity)
-    this.body.setVelocityY(this.jumpSpeed)
-    this.isOnObstacle = false;
-    this.obstacle = undefined;
-    this.scene.time.delayedCall(100, () => {
-      this.isJumping = false;
-    })
+    const out: {x: number, y: number}[] = []
+
+    Phaser.Geom.Intersects.GetRectangleToRectangle(playerBounds, obstacleBounds, out);
+    return out
   }
 
   private showDebugInfo(){
@@ -206,7 +272,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateDebugInfo(){
     if(this.debugText){
-      this.debugText.setText(`Speed: ${this.getCurrentSpeed()} Hook State: ${this.hookSystem.state}`)
+      this.debugText.setText(`Speed: ${this.getCurrentSpeed()} State: ${this.hookSystem.state}`)
     }
   }
 } 

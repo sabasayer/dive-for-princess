@@ -14,7 +14,7 @@ export class Hook {
     constructor(options: {
         scene: Phaser.Scene
         player: Player;
-        hookExtendSpeed: number
+        hookExtendSpeed: number;
     }){
         this.scene = options.scene
         this.player = options.player

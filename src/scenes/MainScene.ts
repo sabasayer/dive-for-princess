@@ -8,7 +8,6 @@ export default class MainScene extends Phaser.Scene {
   private groundY = 50000
   private tileSize = 16
   private obstacles?: Phaser.Physics.Arcade.Group
-  
   constructor() {
     super({ key: 'MainScene' });
   }
@@ -40,6 +39,23 @@ export default class MainScene extends Phaser.Scene {
 
     if(isGameOver){
       this.scene.restart()
+    }
+
+    this.handleGamePause()
+  }
+  private handleGamePause(){
+    if(!this.input.keyboard) return
+
+    const enterKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
+    if(!Phaser.Input.Keyboard.JustDown(enterKey)) return
+
+    console.log(this.game.isPaused)
+
+    if(this.scene.isPaused()){
+      this.scene.resume()
+    }
+    else{
+      this.scene.pause()
     }
   }
 
@@ -88,6 +104,6 @@ export default class MainScene extends Phaser.Scene {
 
   private handleCollision(player: Player, obstacle: Obstacle){
     console.log("Collision detected")
-    player.onObstacle(obstacle)
+    player.bounceFromObstacle(obstacle)
   }
 } 

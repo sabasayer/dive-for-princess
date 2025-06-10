@@ -10,18 +10,20 @@ export class HookSystem {
     private player:Player
     private _currentTarget?:Obstacle
     private hookableObstacles:Obstacle[] = []
-    public state: "idle" | "hookExtending" | "hooking" | "hookPulling" | "hooked" = "idle"
+    public state: "ready" | "hookExtending" | "hooking" | "hookPulling" | "finished" = "ready"
     private hookGraphics!: Hook
-
+    private cooldown: number
 
     constructor(options:{
         scene: Phaser.Scene,
         player: Player,
         hookRange: number
+        cooldown: number
     }) {
         this.scene = options.scene
         this.player = options.player
         this.hookRange = options.hookRange
+        this.cooldown = options.cooldown
         this.hookGraphics = new Hook({
             scene: this.scene,
             player: this.player,
@@ -47,6 +49,7 @@ export class HookSystem {
     
     update(delta:number, obstacles?: Obstacle[]){
         this.calculateTarget(obstacles)
+        this.handleHookExtending(delta)
         this.hookPulling(delta)
     }
 
@@ -79,9 +82,24 @@ export class HookSystem {
         }
     }
 
+
+    handleHookExtending(delta:number){
+        if(this.state !== "hookExtending") return
+
+        return this.extendHook(delta)
+    }
+
+    throwHook(){
+        if(this.state !== "ready") return
+
+        this.state = "hookExtending"
+        this.scene.time.delayedCall(this.cooldown, () => {
+            this.state = "ready"
+        })
+    }
     
      switchTarget(direction: "left" | "right" | "up"){
-        if(this.state !== "idle") return
+        if(this.state !== "ready") return
         
         if(!this.hookableObstacles.length) return
 
@@ -126,7 +144,7 @@ export class HookSystem {
         
     }
 
-    hook(delta:number){
+    extendHook(delta:number){
         const hookPosition = this.currentTargetHookPosition
 
         if(!hookPosition) return
@@ -134,24 +152,24 @@ export class HookSystem {
         const reachedToTarget = this.hookGraphics.extendHook({targetPosition: hookPosition, delta})
         this.state = reachedToTarget ? "hooking" : "hookExtending"
 
+        if(reachedToTarget){
+            this.hookGraphics.hide()
+        }
+
         return reachedToTarget
-    }
-
-    release(){
-        if(!["hooking", "hookExtending"].includes(this.state)) return
-
-        this.hookGraphics.hide()
-
-        this.state = "hookPulling"
     }
 
     hookPulling(delta:number){
         if(this.state !== "hookPulling") return
 
         const reachedToPlayer = this.hookGraphics.retractHook({delta})
-        this.state = reachedToPlayer ? "idle" : "hookPulling"
+        this.state = reachedToPlayer ? "ready" : "hookPulling"
 
         return reachedToPlayer
+    }
+
+    finishHooking(){
+        this.state = "finished"
     }
 
     get currentTarget(){
