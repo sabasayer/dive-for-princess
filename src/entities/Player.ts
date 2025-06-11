@@ -4,13 +4,13 @@ import { colors } from '../utils/colors';
 import type { Obstacle } from './Obstacle';
 import { HookSystem } from '../systems/hook-system';
 import { HookIndicator } from '../systems/hook-system/indicator';
+import { ForceSystem } from '../systems/force-system';
 
 export  class Player extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.Body;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private actionKey?: Phaser.Input.Keyboard.Key;
-  private horizontalSpeed = 20;
-  private jumpSpeed = 200;
+  private horizontalSpeed = 100;
   private maxSpeed = 300;
   private debugText?: Phaser.GameObjects.Text;
   private playerDimensions = {
@@ -22,6 +22,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   private isJumping = false;
   private obstacle?: Obstacle;
   private hookSystem!: HookSystem
+  private forceSystem!: ForceSystem
   private hookIndicator!: HookIndicator
   private hookSpeed = 200
   private speedBeforeHook = 0
@@ -29,7 +30,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     x: 100,
     y: 20
   }
-  private playerState: "idle" | "bounce" = "idle"
+  private playerState: "idle" | "bounce" | "hooking" = "idle"
   private latestXVelocity = 0
   private latestYVelocity = 0
 
@@ -43,6 +44,11 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     this.setupControls();
     this.showDebugInfo()
     this.setupHookSystem()
+    this.setupForceSystem()
+  }
+
+  private setupForceSystem(){
+    this.forceSystem = new ForceSystem(this.body)
   }
 
   private setupHookSystem(){
@@ -61,6 +67,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(false);
     this.body.setSize(this.playerDimensions.width, this.playerDimensions.height);
     this.body.setVelocityY(0);
+    this.body.setMaxVelocity(this.horizontalSpeed,this.maxSpeed)
   }
 
   private setupControls() {
@@ -80,6 +87,8 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(delta:number, obstacles?: Obstacle[]) {
+    this.forceSystem.update(delta)
+
     if(this.playerState === "bounce") return
 
     if (this.cursors?.left?.isDown) {
@@ -93,15 +102,9 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
       this.latestXVelocity = 0
     }
 
-    if(this.body.velocity.y > this.maxSpeed) {
-      this.body.setVelocityY(this.maxSpeed);
-    }
-
     if(this.body.velocity.y !== 0){
       this.latestYVelocity = this.body.velocity.y
     }
-
-    //this.handleObstacleJump()
 
     this.handleHookSystem(delta, obstacles)
     this.updateDebugInfo()
@@ -112,7 +115,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     this.hookSystem.update(delta,obstacles)
     this.handleHookTargetSwitch()
     this.handleHookThrow()
-    this.handleHooking(delta)
+    this.handleHooking()
 
     const currentTarget = this.hookSystem.currentTarget
 
@@ -139,20 +142,20 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     
   }
 
-  private handleHooking(delta:number){
-    this.hookSystem.handleHookExtending(delta)
-
+  private handleHooking(){
     if(this.hookSystem.state !== "hooking") return
+
+    this.playerState = "hooking"
 
     const newVelocity = this.hookSystem.calculateHookVelocity(this.hookSpeed)
 
     if(!newVelocity) return
-
-    console.log("hooking",newVelocity)
     
     const newVelocityY = newVelocity.y + this.speedBeforeHook
 
     this.body.setVelocity(newVelocity.x, newVelocityY)
+    this.latestXVelocity = newVelocity.x
+    this.latestYVelocity = newVelocityY
   }
 
 
@@ -168,7 +171,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   isActionPressed(): boolean {
-    return this.actionKey?.isDown ?? false;
+    return !!this.actionKey && Phaser.Input.Keyboard.JustDown(this.actionKey)
   }
 
   isActionReleased(): boolean {
@@ -183,15 +186,8 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     return Math.round(Math.abs(this.body.velocity.y));
   }
 
-  bounceFromObstacle(obstacle: Obstacle){
-    if(this.playerState === "bounce") return
-
+  handleBounce(collisionPoints: { x: number, y: number }[]){
     this.hookSystem.finishHooking()
-    const collisionPoints = this.getCollisionPoints(obstacle)
-    //pause the game
-
-    if(collisionPoints.length === 0) return
-
     const playerBounds = this.getBounds()
     //this.scene.game.pause()
 
@@ -219,36 +215,48 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
     else if(firstPoint.x <= playerBounds.x && secondPoint.x <= playerBounds.x){
       collisionCorner = "left"
     }
-
+    
     console.log({collisionPoints,playerBounds, velocityX, velocityY, collisionCorner})
 
 
-    if(collisionCorner === "bottom"){
-      // just bounce up and keep the horizontal velocity
-      this.body.setVelocityX(velocityX)
-      this.body.setVelocityY(-this.bounceSpeed.y+ velocityY)
-    }
+    const bounceForce = this.calculateBounceForce(velocityX, velocityY, collisionCorner)
+    this.forceSystem.addImpulse(bounceForce)
 
-    if(collisionCorner === "top"){
-      // just dive down and keep the horizontal velocity
-      this.body.setVelocityX(velocityX)
-      this.body.setVelocityY(this.bounceSpeed.y + velocityY)
-    }
-
-    if(collisionCorner === "left"){
-      // just dive down and keep the horizontal velocity
-      this.body.setVelocityX(this.bounceSpeed.x)
-    }
-
-    if(collisionCorner === "right"){
-      // just dive down and keep the horizontal velocity
-      this.body.setVelocityX(-this.bounceSpeed.x)
-    }
+    console.log({bounceForce})
 
     this.playerState = "bounce"
     this.scene.time.delayedCall(100, () => {
       this.playerState = "idle"
     })
+  }
+
+  private calculateBounceForce(velocityX: number, velocityY: number, collisionCorner: string): Phaser.Math.Vector2 {
+    const restitution = 0.8 // Bounce coefficient
+    const impulseStrength = 300 // Force magnitude
+    
+    switch(collisionCorner) {
+      case "bottom":
+        return new Phaser.Math.Vector2(0, -Math.abs(velocityY) * restitution * impulseStrength)
+      case "top":
+        return new Phaser.Math.Vector2(0, Math.abs(velocityY) * restitution * impulseStrength)
+      case "left":
+        return new Phaser.Math.Vector2(Math.abs(velocityX) * restitution * impulseStrength, 0)
+      case "right":
+        return new Phaser.Math.Vector2(-Math.abs(velocityX) * restitution * impulseStrength, 0)
+      default:
+        return new Phaser.Math.Vector2(0, 0)
+    }
+  }
+
+  bounceFromObstacle(obstacle: Obstacle){
+    console.log("bounceFromObstacle")
+    if(this.playerState === "bounce") return
+
+    const collisionPoints = this.getCollisionPoints(obstacle)
+    //pause the game
+
+    if(collisionPoints.length === 0) return
+    this.handleBounce(collisionPoints)
   }
 
   getCollisionPoints(obstacle: Obstacle): { x: number, y: number }[] {
@@ -272,7 +280,7 @@ export  class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateDebugInfo(){
     if(this.debugText){
-      this.debugText.setText(`Speed: ${this.getCurrentSpeed()} State: ${this.hookSystem.state}`)
+      this.debugText.setText(`Speed: ${this.getCurrentSpeed()} State: ${this.playerState}`)
     }
   }
 } 

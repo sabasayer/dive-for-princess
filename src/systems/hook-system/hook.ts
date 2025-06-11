@@ -52,7 +52,9 @@ export class Hook {
         const x = this.player.x + Math.cos(angle) * this.hookLength
         const y = this.player.y + Math.sin(angle) * this.hookLength
 
-        this.graphics.strokeLineShape(new Phaser.Geom.Line(this.player.x, this.player.y, x, y))
+        const hookLine = new Phaser.Geom.Line(this.player.x, this.player.y, x, y)
+
+        this.graphics.strokeLineShape(hookLine)
         this.hookEndPosition = {x, y}
         return isReachedToTarget
     }

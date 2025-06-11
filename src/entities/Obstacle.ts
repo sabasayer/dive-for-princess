@@ -9,6 +9,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
   private weight = 0;
   private maxSpeed = 200;
   private _type: "hookable" | "damaging"
+  private debugInfo?: Phaser.GameObjects.Text
 
   constructor(scene: Phaser.Scene, options:{
     x: number,
@@ -25,6 +26,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.weight = options.weight;
     this._type = options.type;
+    this.createDebugInfo()
   }
 
   public static createSprite(scene: Phaser.Scene) {
@@ -38,11 +40,34 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     graphics.destroy();
   }
 
+  private createDebugInfo(){
+    this.debugInfo = this.scene.add.text(this.x, this.y, "Obstacle", {
+      fontSize: "8px",
+      color: "#ffffff"
+    })
+    this.debugInfo.setDepth(100)
+  }
+
+  private updateDebugInfo(){
+    if(this.debugInfo && this.isInTheScreen()){
+      this.debugInfo.setText(`${Math.round(this.x)}, ${Math.round(this.y)}`)
+      this.debugInfo.setPosition(this.x, this.y)
+    }
+    else if(this.debugInfo?.visible){
+      this.debugInfo?.setVisible(false)
+    }
+  }
+
+  private isInTheScreen(){
+    return this.x > 0 && this.x < this.scene.sys.canvas.width && this.y > 0 && this.y < this.scene.sys.canvas.height
+  }
+
 
   update(){
     if(this.body.velocity.y > this.maxSpeed){
       this.body.setVelocityY(this.maxSpeed)
     }
+    this.updateDebugInfo()
   }
 
   init(){
