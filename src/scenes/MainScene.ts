@@ -1,109 +1,54 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 
-import { Player } from '../entities/Player';
-import { Obstacle, createObstacles } from '../entities/Obstacle';
+import { Player } from "../entities/Player";
+import { Obstacle } from "../entities/Obstacle";
+import { WallRunningEffects } from "../systems/wall-running/wall-running-effects";
+import { Gem } from "../entities/Gem";
+import { Princess } from "../entities/Princess";
 
 export default class MainScene extends Phaser.Scene {
-  private player?: Player
-  private groundY = 50000
-  private tileSize = 16
-  private obstacles?: Phaser.Physics.Arcade.Group
   constructor() {
-    super({ key: 'MainScene' });
+    super({ key: "MainScene" });
   }
 
-  preload(){
-    Player.createSprite(this)
-    Obstacle.createSprite(this)
+  preload() {
+    Player.createSprite(this);
+    Obstacle.createSprite(this);
+    Princess.createSprite(this);
+    Gem.createSprite(this);
+    WallRunningEffects.createSprite(this);
   }
 
-  create(){
-    this.player = new Player(this,this.gameWidth/2,30)
-    this.cameras.main.startFollow(this.player);
-    this.cameras.main.setFollowOffset(0,-50)
-    this.cameras.main.setBounds(0,0,this.gameWidth,this.groundY+100)
-    this.createBackgroundTiles()
-    this.createGround()
-    this.createObstacles()
-    this.createCollider()
+  create() { 
+    this.scene.launch('TransitionScene', {
+      nextScene: "level1",
+      previousScene: this.scene.key,
+      data: {level: 1},
+      color: colors.blue
+    });
+
+    const startButton = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      120,
+      40,
+      0x00ff00,
+    );
+
+    this.add
+      .text(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY,
+        "Start Game",
+        {
+          fontSize: "16px",
+        },
+      )
+      .setOrigin(0.5);
+
+    startButton.setInteractive();
+    startButton.on("pointerdown", () => {
+      this.scene.start("level1");
+    });
   }
-
-  update(_:number,delta:number){
-    const obstacles = this.obstacles?.getChildren()
-    this.player?.update(delta, obstacles as Obstacle[])
-    obstacles?.forEach(obstacle => {
-      obstacle.update()
-    })
-    
-    const isGameOver = this.player?.hasHitGround(this.groundY)
-
-    if(isGameOver){
-      this.scene.restart()
-    }
-
-    this.handleGamePause()
-  }
-  private handleGamePause(){
-    if(!this.input.keyboard) return
-
-    const enterKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
-    if(!Phaser.Input.Keyboard.JustDown(enterKey)) return
-
-    console.log(this.game.isPaused)
-
-    if(this.scene.isPaused()){
-      this.scene.resume()
-    }
-    else{
-      this.scene.pause()
-    }
-  }
-
-  //Create 4x4 tiles
-  private createBackgroundTiles(){
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0xFFA500,0.2);
-
-    for (let y = -100; y < this.groundY; y += this.tileSize) {
-      for (let x = 0; x < this.gameWidth; x += this.tileSize) {
-        graphics.strokeRect(x, y, this.tileSize, this.tileSize);
-      }
-    }
-  }
-
-  private createGround(){
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0xFFA500);
-    graphics.fillRect(0,this.groundY,this.gameWidth,100)
-  }
-
-  // create random obstacles from the top of the game to the groundY with some random gap
-  private createObstacles(){
-    this.obstacles = createObstacles(
-      {
-        scene: this,
-        groundY: this.groundY,
-        gameWidth: this.gameWidth,
-        player: this.player as Player,
-        totalObstacles: 1000,
-        minGap: 10,
-        maxGap: 100
-      })
-  }
-
-
-  private get gameWidth():number{
-    return this.game.config.width as number
-  }
-  
-  private createCollider(){
-    if(!this.player || !this.obstacles) return
-    this.physics.add.collider(this.player,this.obstacles,this.handleCollision)
-  }
-    
-
-  private handleCollision(player: Player, obstacle: Obstacle){
-    console.log("Collision detected")
-    player.bounceFromObstacle(obstacle)
-  }
-} 
+}

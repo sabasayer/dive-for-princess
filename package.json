@@ -13,12 +13,17 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
+    "@types/matter-js": "^0.19.8",
     "eslint": "^9.28.0",
-    "eslint-plugin-import": "^2.31.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.1",
+    "prettier": "^3.4.2",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "vite": "npm:rolldown-vite@latest",
+    "unplugin-auto-import": "^19.3.0"
   },
   "dependencies": {
-    "phaser": "^3.90.0"
+    "phaser": "^3.90.0",
+    "matter-js": "^0.20.0"
   }
 }

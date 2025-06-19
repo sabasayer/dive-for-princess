@@ -1,12 +1,21 @@
+import { defineConfig } from "eslint/config";
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
+import eslintConfigPrettier from "eslint-config-prettier";
+import prettierPlugin from "eslint-plugin-prettier";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import autoImport from "./.eslintrc-auto-import.mjs";
 
-export default [
-  js.configs.recommended,
+const globals = autoImport.globals;
+
+export default defineConfig(
   {
     files: ['**/*.ts', '**/*.tsx'],
+    extends:[
+      js.configs.recommended,
+    ],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -17,14 +26,18 @@ export default [
       globals: {
         console: 'readonly',
         process: 'readonly',
+        ...globals,
       },
     },
     plugins: {
       '@typescript-eslint': typescript,
       'import': importPlugin,
+      'prettier': prettierPlugin,
     },
     rules: {
       ...typescript.configs.recommended.rules,
+      ...eslintConfigPrettier.rules,
+      ...eslintPluginPrettierRecommended.rules,
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -69,6 +82,8 @@ export default [
       'build/**',
       '*.min.js',
       'public/**',
+      'auto-imports.d.ts',
+      'bun.lock'
     ],
   },
-]; 
+); 

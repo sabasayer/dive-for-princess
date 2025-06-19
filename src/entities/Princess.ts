@@ -1,25 +1,27 @@
-import Phaser from 'phaser';
+import type { BodyType } from "matter";
 
-export class Princess extends Phaser.Physics.Arcade.Sprite {
-  declare body: Phaser.Physics.Arcade.Body;
-  private currentSpeed = 25;
-  private maxSpeed = 200;
+export class Princess extends Phaser.Physics.Matter.Sprite {
+  declare body: BodyType | null;
+  private currentSpeed = 1.5;
+  private maxSpeed = 2.8;
   private isSaved = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'princess');
-    
+    super(scene.matter.world, x, y, "princess");
+
     this.scene.add.existing(this);
-    this.scene.physics.add.existing(this);
-    
+    this.setName("princess");
     this.setupPrincess();
   }
 
   private setupPrincess() {
-    this.setCollideWorldBounds(false);
-    this.body.setSize(16, 16);
-    this.body.setVelocityY(this.currentSpeed);
-    
+    this.setRectangle(16, 16);
+    this.setVelocityY(this.currentSpeed);
+    this.setFriction(0);
+    this.setFrictionAir(0);
+    this.setFrictionStatic(0);
+    this.setSensor(true);
+
     this.scene.tweens.add({
       targets: this,
       scaleX: 1.1,
@@ -27,7 +29,7 @@ export class Princess extends Phaser.Physics.Arcade.Sprite {
       duration: 900,
       yoyo: true,
       repeat: -1,
-      ease: 'Sine.easeInOut'
+      ease: "Sine.easeInOut",
     });
   }
 
@@ -35,26 +37,26 @@ export class Princess extends Phaser.Physics.Arcade.Sprite {
     const graphics = scene.add.graphics();
     graphics.fillStyle(0xff69b4);
     graphics.fillRect(0, 0, 16, 16);
-    graphics.generateTexture('princess', 16, 16);
+    graphics.generateTexture("princess", 16, 16);
     graphics.destroy();
   }
 
   update() {
     if (!this.isSaved) {
-      this.body.setVelocityX(Math.sin(this.scene.time.now * 0.002) * 25);
-      
-      if(this.body.velocity.y > this.maxSpeed) {
-        this.body.setVelocityY(this.maxSpeed);
+      this.setVelocityX(Math.sin(this.scene.time.now * 0.002) * 0.25);
+
+      if (this.body?.velocity?.y && this.body.velocity.y > this.maxSpeed) {
+        this.setVelocityY(this.maxSpeed);
       }
     }
   }
 
   save() {
     this.isSaved = true;
-    this.body.setVelocity(0, 0);
-    
+    this.setVelocity(0, 0);
+
     this.scene.tweens.killTweensOf(this);
-    
+
     this.scene.tweens.add({
       targets: this,
       scaleX: 1.3,
@@ -63,7 +65,7 @@ export class Princess extends Phaser.Physics.Arcade.Sprite {
       duration: 150,
       yoyo: true,
       repeat: 8,
-      ease: 'Power2'
+      ease: "Power2",
     });
   }
 
@@ -78,4 +80,4 @@ export class Princess extends Phaser.Physics.Arcade.Sprite {
   getCurrentSpeed(): number {
     return this.currentSpeed;
   }
-} 
+}
