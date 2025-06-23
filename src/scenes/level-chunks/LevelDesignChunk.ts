@@ -46,7 +46,7 @@ export class LevelDesignChunk {
   }
 
   get bottom() {
-    const lastItem = this._elements[this._elements.length - 1];
+    const lastItem = this._elements.toSorted((a, b) => a.y - b.y)[this._elements.length - 1];
     if (!lastItem) return 0;
     if (lastItem instanceof Obstacle) {
       return lastItem.y + lastItem.height * 2;

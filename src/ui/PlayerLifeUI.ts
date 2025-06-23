@@ -1,24 +1,22 @@
-export class PlayerLifeUI extends Phaser.GameObjects.Container {
+export class PlayerLifeUI {
   private lifes: Phaser.GameObjects.Rectangle[] = [];
   constructor(
-    scene: Phaser.Scene,
+    private scene: Phaser.Scene,
     private player: Player,
   ) {
-    super(scene, 0, 0);
     this.createLifes(player.life);
   }
 
   createLifes(lifes: number) {
-    const gap = 4;
     for (let i = 0; i < lifes; i++) {
       const life = this.scene.add.rectangle(
-        i * (16 + gap),
+        i,
         0,
-        16,
-        16,
-        0x000000,
+        4,
+        4,
+        colors.red,
       );
-      this.add(life);
+      life.setOrigin(0, 0);
       this.lifes.push(life);
     }
   }
@@ -30,8 +28,16 @@ export class PlayerLifeUI extends Phaser.GameObjects.Container {
   }
 
   update() {
-    super.update();
-    this.setPosition(this.player.x - 16, this.player.y - 16);
+    const gap = 4;
+    this.lifes.forEach((life, index) => {
+      life.setPosition(this.player.x - (this.player.width/2) + index * (4 + gap), this.player.y - 16);
+    });
     this.updateLifes(this.player.life);
+  }
+
+  destroy() {
+    this.lifes.forEach((life) => {
+      life.destroy();
+    });
   }
 }

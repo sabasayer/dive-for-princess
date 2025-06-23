@@ -101,6 +101,10 @@ export class HookSystem {
     const closestObstacle = this.hookableObstacles[0];
 
     if (this._currentTarget) {
+      if(["hooking", "hookExtending"].includes(this.state)){
+        return;
+      }
+      
       const currentTargetDistance = Phaser.Math.Distance.Between(
         this.player.x,
         this.player.y,

@@ -23,9 +23,7 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
 
   constructor(scene: Phaser.Scene, options: ObstacleOptions) {
     super(scene.matter.world, options.x, options.y, options.type);
-    this.setFriction(0);
-    this.setFrictionAir(0.01);
-    this.setOrigin(0, 0);
+   
     this.setName("obstacle");
     this.setScale(options.width / 16, options.height / 16);
     this.setAngle(options.angle || 0);
@@ -34,6 +32,8 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
       isStatic: options.physicsType === "static",
       angle: options.angle || 0,
     });
+    this.setFriction(0);
+    this.setFrictionAir(0.01);
     this._type = options.type;
     this._physicsType = options.physicsType;
     this.createDebugInfo();
@@ -65,6 +65,7 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
     if (this.debugInfo && this.isInTheScreen()) {
       this.debugInfo.setText(`${Math.round(this.x)}, ${Math.round(this.y)}`);
       this.debugInfo.setPosition(this.x, this.y);
+      this.debugInfo.setVisible(true);
     } else if (this.debugInfo?.visible) {
       this.debugInfo?.setVisible(false);
     }

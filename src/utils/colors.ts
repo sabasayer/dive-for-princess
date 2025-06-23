@@ -9,4 +9,5 @@ export const colors = {
   brown: 0xa52a2a,
   gray: 0x808080,
   white: 0xffffff,
+  black: 0x000000,
 };

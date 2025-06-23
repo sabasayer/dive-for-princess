@@ -20,8 +20,10 @@ declare global {
   const Obstacle: typeof import('./src/entities/Obstacle')['Obstacle']
   const Phaser: typeof import('phaser')['default']
   const Player: typeof import('./src/entities/Player')['Player']
+  const PlayerGemCountUI: typeof import('./src/ui/PlayerGemCountUI')['PlayerGemCountUI']
   const PlayerLifeUI: typeof import('./src/ui/PlayerLifeUI')['PlayerLifeUI']
   const Princess: typeof import('./src/entities/Princess')['Princess']
+  const PrincessIndicator: typeof import('./src/ui/PrincessIndicator')['PrincessIndicator']
   const SceneEnvironment: typeof import('./src/entities/SceneEnvironment')['default']
   const TitleScene: typeof import('./src/scenes/TitleScene')['default']
   const TransitionScene: typeof import('./src/scenes/TransitionSecene')['TransitionScene']
@@ -30,9 +32,13 @@ declare global {
   const WallRunningSystem: typeof import('./src/systems/wall-running/wall-running')['WallRunningSystem']
   const colors: typeof import('./src/utils/colors')['colors']
   const createBeginningChunk: typeof import('./src/scenes/level-chunks/BeginningChunk')['createBeginningChunk']
+  const createDamagingObstacleElement: typeof import('./src/factories/level-design-element-factory')['createDamagingObstacleElement']
+  const createGemElement: typeof import('./src/factories/level-design-element-factory')['createGemElement']
+  const createObstacleElement: typeof import('./src/factories/level-design-element-factory')['createObstacleElement']
   const createObstacles: typeof import('./src/factories/obstacle-factory')['createObstacles']
   const createStaticObstacles: typeof import('./src/factories/obstacle-factory')['createStaticObstacles']
   const createWallJumpChunk: typeof import('./src/scenes/level-chunks/WallJumpChunk')['createWallJumpChunk']
+  const createWallObstacleElement: typeof import('./src/factories/level-design-element-factory')['createWallObstacleElement']
   const default: typeof import('phaser')['default']
   const getClosestPointToSource: typeof import('./src/utils/obstacle')['getClosestPointToSource']
   const getClosestPointToSourceWithAngle: typeof import('./src/utils/obstacle')['getClosestPointToSourceWithAngle']
@@ -98,6 +104,12 @@ declare global {
   export type { LevelDesignElementWithObstacle, LevelDesignElementWithGem, LevelDesignElement } from './src/types/LevelDesignElement'
   import('./src/types/LevelDesignElement')
   // @ts-ignore
+  export type { PlayerGemCountUI } from './src/ui/PlayerGemCountUI'
+  import('./src/ui/PlayerGemCountUI')
+  // @ts-ignore
   export type { PlayerLifeUI } from './src/ui/PlayerLifeUI'
   import('./src/ui/PlayerLifeUI')
+  // @ts-ignore
+  export type { PrincessIndicator } from './src/ui/PrincessIndicator'
+  import('./src/ui/PrincessIndicator')
 }

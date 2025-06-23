@@ -1,5 +1,6 @@
 import type { LevelDesignChunk } from "./level-chunks/LevelDesignChunk";
 import { WallRunningEffects } from "../systems/wall-running/wall-running-effects";
+import { PrincessIndicator } from "../ui/PrincessIndicator";
 
 export interface LevelOptions {
   key: string;
@@ -19,6 +20,7 @@ export class BaseLevel extends Phaser.Scene {
   private chunks: LevelDesignChunk[] = [];
   private isRestarting = false;
   private isStarting = false;
+  private princessIndicator?: PrincessIndicator;
 
   constructor(private options: LevelOptions) {
     super({ key: options.key });
@@ -38,13 +40,11 @@ export class BaseLevel extends Phaser.Scene {
     this.createGround();
     this.setObstacles();
     this.setupCollisionEvents();
+    this.createPrincessIndicator();
   }
 
   update(_: number, delta: number) {
     const obstacles = this.obstacles;
-    if (obstacles?.some((e) => e === undefined)) {
-      console.log("obstacles", obstacles);
-    }
     this.player?.update(delta, obstacles as Obstacle[]);
     this.chunks.forEach((chunk) => {
       chunk.update();
@@ -52,6 +52,11 @@ export class BaseLevel extends Phaser.Scene {
     this.princess?.update();
     this.handleNextLevel();
     this.handleGameOver();
+    this.princessIndicator?.update(this.options.groundY);
+  }
+
+  private createPrincessIndicator() {
+    this.princessIndicator = new PrincessIndicator(this,this.player!);
   }
 
   private handleNextLevel() {

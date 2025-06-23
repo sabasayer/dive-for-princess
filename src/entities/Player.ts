@@ -13,6 +13,7 @@ import {
 import { getColisionSide } from "../utils/collision";
 import type { Princess } from "./Princess";
 import type { Gem } from "./Gem";
+import { PlayerGemCountUI } from "../ui/PlayerGemCountUI";
 
 export class Player extends Phaser.Physics.Matter.Sprite {
   declare body: BodyType;
@@ -27,6 +28,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     height: 16,
   };
   private hookRange = 150;
+  private hookEnabled = false;
   private hookSystem!: HookSystem;
   private hookIndicator!: HookIndicator;
   private wallRunningSystem!: WallRunningSystem;
@@ -42,11 +44,16 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     speedBoostIncreasePerSecond: 0.1,
     speedBoostTimeout: 1000,
     initialSpeedBoost: 0.1,
-    jumpForce: 8,
+    jumpForce: 10,
     enabled: true,
   };
+  private jumpActionBufferPressedBuffer = 100;
+  private jumpActionsPressed = false;
   private _life = 3;
   private lifeUI?: PlayerLifeUI;
+  private gemCountUI?: PlayerGemCountUI;
+  private gemsCollected = 0;
+  private gemSpeedBoost = 0.1;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene.matter.world, x, y, "player");
@@ -56,6 +63,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
     this.setupPlayer();
     this.setupLifeUI();
+    this.setupGemCountUI();
     this.setupControls();
     this.showDebugInfo();
     this.setupHookSystem();
@@ -98,6 +106,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this.lifeUI = new PlayerLifeUI(this.scene, this);
   }
 
+  private setupGemCountUI() {
+    this.gemCountUI = new PlayerGemCountUI(this.scene);
+  }
+
   private setupControls() {
     if (!this.scene.input.keyboard) return;
 
@@ -130,8 +142,13 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   private handleActionPressed() {
     if (this.isActionPressed()) {
       const force = this.wallRunningSystem.jump();
+      logger.log("handleActionPressed", force);
       if (force) {
         this.addVelocity(force);
+        this.jumpActionsPressed = false;
+      }
+      else{
+        this.handleHookThrow();
       }
     }
   }
@@ -193,9 +210,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
 
   private handleHookSystem(delta: number, obstacles?: Obstacle[]) {
+    if(!this.hookEnabled) return;
+
     this.hookSystem.update(delta, obstacles);
     this.handleHookTargetSwitch();
-    this.handleHookThrow();
     this.handleHooking();
 
     const currentTarget = this.hookSystem.currentTarget;
@@ -212,7 +230,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
 
   private handleHookThrow() {
-    if (!this.isActionPressed()) return;
+    if(!this.hookEnabled) return;
 
     const hookPosition = this.hookSystem.currentTargetHookPosition;
 
@@ -254,7 +272,17 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
 
   isActionPressed(): boolean {
-    return !!this.actionKey && Phaser.Input.Keyboard.JustDown(this.actionKey);
+    const isActionPressed = !!this.actionKey && Phaser.Input.Keyboard.JustDown(this.actionKey)
+
+    if(isActionPressed){
+      logger.log("isActionPressed");
+      this.jumpActionsPressed = true;
+      this.scene.time.delayedCall(this.jumpActionBufferPressedBuffer, () => {
+        this.jumpActionsPressed = false;
+      });
+    }
+
+    return this.jumpActionsPressed;
   }
 
   isActionReleased(): boolean {
@@ -281,7 +309,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
 
   onCollisionWithObstacle(obstacle: Obstacle) {
-    logger.log("onCollisionWithObstacle");
     this.hookSystem.finishHooking();
 
     const collisionPoints = this.getCollisionPoints(obstacle);
@@ -296,6 +323,9 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   onCollisionWithGem(gem: Gem) {
     logger.log("onCollisionWithGem", gem);
     gem.destroy();
+    this.gemsCollected++;
+    this.gemCountUI?.update(this.gemsCollected);
+    this.setVelocityY(this.body.velocity.y + this.gemSpeedBoost);
   }
 
   addVelocity(velocity: Phaser.Math.Vector2) {
@@ -314,12 +344,30 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
     this.playerState = "hurt";
     this.setVelocity(-x * 10, -y * 10);
-    this.scene.cameras.main.shake(100, 0.01);
+    this.scene.cameras.main.shake(100, 0.03);
+    this.showDamageParticles(collisionPoints);
     this.scene.time.delayedCall(100, () => {
       this.playerState = "idle";
     });
 
     this._life--;
+  }
+
+  showDamageParticles(collisionPoints: { x: number; y: number }[]){
+    const firstCollisionPoint = collisionPoints[0];
+    const particles = this.scene.add.particles(firstCollisionPoint.x, firstCollisionPoint.y, "white", {
+      lifespan: 200,
+      speed: 100,
+      quantity: 10,
+      duration: 200,
+      scale: { start: 3, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: colors.white,
+      blendMode: "ADD",
+      angle: { min: 0, max: 180 },
+    });
+
+    particles.start();
   }
 
   checkCollisionWithPrincess() {
@@ -362,7 +410,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   private updateDebugInfo() {
     if (this.debugText) {
       this.debugText.setText(
-        `speed: ${this.getCurrentSpeed()}`,
+        `State: ${this.wallRunningSystem.state}`,
       );
     }
   }

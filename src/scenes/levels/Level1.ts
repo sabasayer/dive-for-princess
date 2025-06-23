@@ -9,7 +9,7 @@ export class Level1 extends BaseLevel {
       nextLevelKey: "level2",
       groundY: 50000,
       playerPosition: { x: 100, y: 100 },
-      princessPosition: { x: 100, y: 800 },
+      princessPosition: { x: 100, y: 300 },
     });
   }
 
@@ -18,10 +18,10 @@ export class Level1 extends BaseLevel {
     this.addChunks(beginningChunk);
 
     let lastBottom = beginningChunk.bottom;
-    for(let i = 0; i < 10; i++){
+    for(let i = 0; i < 20; i++){
       const wallJumpChunk = createWallJumpChunk(this, {
         x: 0,
-        y: lastBottom + 64,
+        y: lastBottom + 18,
       });
       lastBottom = wallJumpChunk.bottom;
       this.addChunks(wallJumpChunk);
