@@ -15,13 +15,12 @@ const config: Phaser.Types.Core.GameConfig = {
     default: "matter",
     matter: {
       gravity: { x: 0, y: 0.03 },
-      debug: false,
+      debug: true,
     },
   },
-  scene: [MainScene, Level1, Level2, Level3, TransitionScene],
+  scene: [MainScene, TestScene, Level1, Level2, Level3, TransitionScene],
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
     min: {
       width: 256,
       height: 224,

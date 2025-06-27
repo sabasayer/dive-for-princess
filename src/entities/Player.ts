@@ -4,7 +4,6 @@ import type { BodyType } from "matter";
 import { colors } from "../utils/colors";
 import type { Obstacle } from "./Obstacle";
 import { HookSystem } from "../systems/hook-system/hook-system";
-import { HookIndicator } from "../systems/hook-system/indicator";
 import { logger } from "../utils/logger";
 import {
   WallRunningSystem,
@@ -13,13 +12,12 @@ import {
 import { getColisionSide } from "../utils/collision";
 import type { Princess } from "./Princess";
 import type { Gem } from "./Gem";
-import { PlayerGemCountUI } from "../ui/PlayerGemCountUI";
 
 export class Player extends Phaser.Physics.Matter.Sprite {
   declare body: BodyType;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private actionKey?: Phaser.Input.Keyboard.Key;
-  private horizontalSpeed = 1;
+  private horizontalSpeed = 0.8;
   private maxFallSpeed = 2.5;
   private maxJumpSpeed = 1;
   private debugText?: Phaser.GameObjects.Text;
@@ -27,12 +25,11 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     width: 16,
     height: 16,
   };
-  private hookRange = 150;
-  private hookEnabled = false;
+  private hookRange = 50;
+  private hookEnabled = true;
   private hookSystem!: HookSystem;
-  private hookIndicator!: HookIndicator;
   private wallRunningSystem!: WallRunningSystem;
-  private hookSpeed = 2;
+  private hookSpeed = 4;
   private speedBeforeHook = 0;
   private playerState: "idle" | "bounce" | "hooking" | "wallRunning" | "hurt" =
     "idle";
@@ -44,26 +41,29 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     speedBoostIncreasePerSecond: 0.1,
     speedBoostTimeout: 1000,
     initialSpeedBoost: 0.1,
-    jumpForce: 10,
+    jumpForce: 12,
+    minimumWallRunningAngle: 30,
     enabled: true,
   };
   private jumpActionBufferPressedBuffer = 100;
   private jumpActionsPressed = false;
   private _life = 3;
-  private lifeUI?: PlayerLifeUI;
-  private gemCountUI?: PlayerGemCountUI;
   private gemsCollected = 0;
   private gemSpeedBoost = 0.1;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene.matter.world, x, y, "player");
+    super(
+      scene.matter.world,
+      x,
+      y,
+      "spritesheet_transparent",
+      SPRITESHEET_FRAMES.player.idle,
+    );
 
     this.scene.add.existing(this);
     this.setName("player");
 
     this.setupPlayer();
-    this.setupLifeUI();
-    this.setupGemCountUI();
     this.setupControls();
     this.showDebugInfo();
     this.setupHookSystem();
@@ -84,9 +84,9 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       player: this,
       hookRange: this.hookRange,
       cooldown: 1000,
-    });
-    this.hookIndicator = new HookIndicator({
-      scene: this.scene,
+      hookExtendSpeed: 90,
+      minimumDistanceToTarget: 20,
+      enabled: this.hookEnabled,
     });
   }
 
@@ -95,19 +95,38 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       this.playerDimensions.width,
       this.playerDimensions.height,
     );
+    this.setScale(
+      this.playerDimensions.width / DIMENSIONS.spriteSheet.frameWidth,
+      this.playerDimensions.height / DIMENSIONS.spriteSheet.frameHeight,
+    );
     this.setFixedRotation();
     this.setFriction(0);
     this.setFrictionAir(0.001);
     this.setFrictionStatic(0);
     this.setVelocity(0, 0.02);
+
+    this.createAnimations();
+    this.play("wallRunning");
   }
 
-  private setupLifeUI() {
-    this.lifeUI = new PlayerLifeUI(this.scene, this);
-  }
+  private createAnimations() {
+    this.anims.create({
+      key: "wallRunning",
+      repeat: -1,
+      frameRate: 10,
+      frames: this.anims.generateFrameNumbers("spritesheet_transparent", {
+        frames: SPRITESHEET_FRAMES.player.wallRunning,
+      }),
+    });
 
-  private setupGemCountUI() {
-    this.gemCountUI = new PlayerGemCountUI(this.scene);
+    this.anims.create({
+      key: "falling",
+      repeat: -1,
+      frameRate: 5,
+      frames: this.anims.generateFrameNumbers("spritesheet_transparent", {
+        frames: SPRITESHEET_FRAMES.player.falling,
+      }),
+    });
   }
 
   private setupControls() {
@@ -131,11 +150,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this.handleVelocityY();
     this.handleVelocityX();
     this.handleActionPressed();
-    this.lifeUI?.update();
 
-    this.handleHookSystem(delta, obstacles);
     this.updateDebugInfo();
     this.handleWallRunningSystem(delta, obstacles);
+    this.handleHookSystem(delta, obstacles);
     this.checkCollisionWithPrincess();
   }
 
@@ -146,8 +164,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       if (force) {
         this.addVelocity(force);
         this.jumpActionsPressed = false;
-      }
-      else{
+      } else {
         this.handleHookThrow();
       }
     }
@@ -192,8 +209,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
     if (this.cursors?.left?.isDown) {
       targetSpeed = -this.horizontalSpeed + currentHorizontalSpeedBoost;
+      this.setFlipX(true);
     } else if (this.cursors?.right?.isDown) {
       targetSpeed = this.horizontalSpeed + currentHorizontalSpeedBoost;
+      this.setFlipX(false);
     }
     targetSpeed = Phaser.Math.Linear(this.body.velocity.x, targetSpeed, 0.3);
     this.setVelocityX(targetSpeed);
@@ -204,33 +223,27 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
     if (this.wallRunningSystem.isWallRunning) {
       this.playerState = "wallRunning";
+      const { angle, mirror } = this.wallRunningSystem.angleToWall;
+      this.setRotation(Phaser.Math.DegToRad(-angle));
+      this.setFlipX(mirror);
+      this.play("wallRunning", true);
+      this.hookSystem.setEnabled(false);
     } else {
       this.playerState = "idle";
+      this.setRotation(0);
+      this.play("falling", true);
+      this.hookSystem.setEnabled(true);
     }
   }
 
   private handleHookSystem(delta: number, obstacles?: Obstacle[]) {
-    if(!this.hookEnabled) return;
-
     this.hookSystem.update(delta, obstacles);
     this.handleHookTargetSwitch();
     this.handleHooking();
-
-    const currentTarget = this.hookSystem.currentTarget;
-
-    if (currentTarget) {
-      //handle hook indicator
-      const position = this.hookSystem.currentTargetHookPosition;
-      if (position) {
-        this.hookIndicator.show(position);
-      }
-    } else {
-      this.hookIndicator.hide();
-    }
   }
 
   private handleHookThrow() {
-    if(!this.hookEnabled) return;
+    if (!this.hookEnabled) return;
 
     const hookPosition = this.hookSystem.currentTargetHookPosition;
 
@@ -272,9 +285,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
 
   isActionPressed(): boolean {
-    const isActionPressed = !!this.actionKey && Phaser.Input.Keyboard.JustDown(this.actionKey)
+    const isActionPressed =
+      !!this.actionKey && Phaser.Input.Keyboard.JustDown(this.actionKey);
 
-    if(isActionPressed){
+    if (isActionPressed) {
       logger.log("isActionPressed");
       this.jumpActionsPressed = true;
       this.scene.time.delayedCall(this.jumpActionBufferPressedBuffer, () => {
@@ -283,10 +297,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     }
 
     return this.jumpActionsPressed;
-  }
-
-  isActionReleased(): boolean {
-    return this.actionKey?.isUp ?? false;
   }
 
   hasHitGround(groundY: number): boolean {
@@ -299,9 +309,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
   destroy(fromScene?: boolean): void {
     this.hookSystem.destroy();
-    this.hookIndicator.destroy();
     this.wallRunningSystem.destroy();
-    this.lifeUI?.destroy();
     if (this.debugText) {
       this.debugText.destroy();
     }
@@ -324,7 +332,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     logger.log("onCollisionWithGem", gem);
     gem.destroy();
     this.gemsCollected++;
-    this.gemCountUI?.update(this.gemsCollected);
     this.setVelocityY(this.body.velocity.y + this.gemSpeedBoost);
   }
 
@@ -338,8 +345,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   private handleCollisionWithDangerousObstacle(
     collisionPoints: { x: number; y: number }[],
   ) {
-    logger.log("handleCollisionWithDangerousObstacle");
-
     const { x, y } = getColisionSide(collisionPoints, this);
 
     this.playerState = "hurt";
@@ -353,19 +358,24 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this._life--;
   }
 
-  showDamageParticles(collisionPoints: { x: number; y: number }[]){
+  showDamageParticles(collisionPoints: { x: number; y: number }[]) {
     const firstCollisionPoint = collisionPoints[0];
-    const particles = this.scene.add.particles(firstCollisionPoint.x, firstCollisionPoint.y, "white", {
-      lifespan: 200,
-      speed: 100,
-      quantity: 10,
-      duration: 200,
-      scale: { start: 3, end: 0 },
-      alpha: { start: 1, end: 0 },
-      tint: colors.white,
-      blendMode: "ADD",
-      angle: { min: 0, max: 180 },
-    });
+    const particles = this.scene.add.particles(
+      firstCollisionPoint.x,
+      firstCollisionPoint.y,
+      "white",
+      {
+        lifespan: 200,
+        speed: 100,
+        quantity: 10,
+        duration: 200,
+        scale: { start: 3, end: 0 },
+        alpha: { start: 1, end: 0 },
+        tint: colors.white,
+        blendMode: "ADD",
+        angle: { min: 0, max: 180 },
+      },
+    );
 
     particles.start();
   }
@@ -409,9 +419,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
   private updateDebugInfo() {
     if (this.debugText) {
-      this.debugText.setText(
-        `State: ${this.wallRunningSystem.state}`,
-      );
+      this.debugText.setText(`State: ${this.wallRunningSystem.state}`);
     }
   }
 
@@ -421,5 +429,9 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
   get life() {
     return this._life;
+  }
+
+  get gemCount() {
+    return this.gemsCollected;
   }
 }

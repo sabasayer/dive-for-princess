@@ -20,17 +20,41 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
   private _type: ObstacleOptions["type"];
   private _physicsType: ObstacleOptions["physicsType"];
   private debugInfo?: Phaser.GameObjects.Text;
+  private tileSprite?: Phaser.GameObjects.TileSprite;
 
   constructor(scene: Phaser.Scene, options: ObstacleOptions) {
-    super(scene.matter.world, options.x, options.y, options.type);
-   
+    let frame = SPRITESHEET_FRAMES.wall;
+    if (options.type === "damaging") {
+      frame = SPRITESHEET_FRAMES.damaging;
+    }
+
+    super(
+      scene.matter.world,
+      options.x,
+      options.y,
+      "spritesheet_transparent",
+      frame,
+    );
+
+    this.tileSprite = this.scene.add.tileSprite(
+      options.x,
+      options.y,
+      options.width,
+      options.height,
+      "spritesheet_transparent",
+      frame,
+    );
+
+    this.visible = false;
+
     this.setName("obstacle");
     this.setScale(options.width / 16, options.height / 16);
     this.setAngle(options.angle || 0);
+    this.tileSprite.setAngle(options.angle || 0);
     scene.add.existing(this);
     this.setRectangle(options.width, options.height, {
       isStatic: options.physicsType === "static",
-      angle: options.angle || 0,
+      angle: Phaser.Math.DegToRad(options.angle || 0),
     });
     this.setFriction(0);
     this.setFrictionAir(0.01);
@@ -86,6 +110,12 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
       camera.height + buffer * 2,
     );
     return Phaser.Geom.Intersects.RectangleToRectangle(bounds, rectangle);
+  }
+
+  setPosition(x: number, y: number) {
+    super.setPosition(x, y);
+    this.tileSprite?.setPosition(x, y);
+    return this;
   }
 
   update() {

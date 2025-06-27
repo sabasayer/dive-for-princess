@@ -23,6 +23,7 @@ export interface WallRunningConfig {
   speedBoostIncreasePerSecond: number;
   horizontalSpeedBoostIncreasePerSecond: number;
   jumpForce: number;
+  minimumWallRunningAngle: number;
   enabled: boolean;
 }
 
@@ -58,12 +59,14 @@ export class WallRunningSystem {
   private scene: Phaser.Scene;
   private wallRunningEffects: WallRunningEffects;
   private player: Player;
-  private _state: "wallRunning" | "onAirSpeedBoost" | "jumping" | "idle"  = "idle";
+  private _state: "wallRunning" | "onAirSpeedBoost" | "jumping" | "idle" =
+    "idle";
   private jumpForce = 10;
   private currentSpeedBoostTimeout = 0;
   private endWallRunningDelay = 100;
   private endWallRunningDelayTimer = 0;
   private latestRayResult: RayCastResult | undefined;
+  private minimumWallRunningAngle = 0;
   private enabled = true;
 
   constructor(options: WallRunningSystemOptions) {
@@ -79,6 +82,7 @@ export class WallRunningSystem {
       options.horizontalSpeedBoostIncreasePerSecond;
     this.jumpForce = options.jumpForce;
     this.enabled = options.enabled;
+    this.minimumWallRunningAngle = options.minimumWallRunningAngle;
     this.graphics = this.scene.add.graphics();
     this.wallRunningEffects = new WallRunningEffects(this.scene, this.player);
   }
@@ -93,6 +97,7 @@ export class WallRunningSystem {
 
   castRays(obstacles: Obstacle[]): RayCastResult {
     const rays = this.createRays();
+    this.visualizeRays(rays);
 
     const runnableObstacles = getRunnableObstacles(obstacles);
 
@@ -103,8 +108,6 @@ export class WallRunningSystem {
         return collision;
       }
     }
-
-    this.visualizeRays(rays);
 
     return { canWallRun: false, wallSide: undefined, wall: undefined };
   }
@@ -130,10 +133,10 @@ export class WallRunningSystem {
         const firstCollision = collision[0];
         const normal = firstCollision.normal;
         let side: "left" | "right" | undefined;
-        if (normal.x > 0) {
-          side = "right";
-        } else if (normal.x < 0) {
+        if (ray.x1 > ray.x2) {
           side = "left";
+        } else if (ray.x1 < ray.x2) {
+          side = "right";
         }
 
         return {
@@ -149,16 +152,24 @@ export class WallRunningSystem {
   private createRays() {
     const playerBounds = this.player.getBounds();
     const rays: Phaser.Geom.Line[] = [];
+    const padding = 1;
     const gap = playerBounds.height / (this.rayCount - 1) - 4;
 
     for (let i = 0; i < this.rayCount; i++) {
       // Left ray
+      let y = playerBounds.top + gap * i;
+      if (i === 0) {
+        y += padding;
+      }
+      if (i === this.rayCount - 1) {
+        y -= padding;
+      }
       rays.push(
         new Phaser.Geom.Line(
           playerBounds.left,
-          playerBounds.top + 2 + gap * i,
+          y,
           playerBounds.left - this.rayLength,
-          playerBounds.top + 2 + gap * i,
+          y,
         ),
       );
 
@@ -166,9 +177,9 @@ export class WallRunningSystem {
       rays.push(
         new Phaser.Geom.Line(
           playerBounds.right,
-          playerBounds.top + 2 + gap * i,
+          y,
           playerBounds.right + this.rayLength,
-          playerBounds.top + 2 + gap * i,
+          y,
         ),
       );
     }
@@ -184,15 +195,20 @@ export class WallRunningSystem {
     this.wall = wall;
     this.side = wallSide;
     this.speedBoostTimeoutTimer = 0;
-    this._currentSpeedBoost += this.initialSpeedBoost;
-    this.currentSpeedBoostTimeout = this.speedBoostTimeout/10;
+    let speedBoost = this.initialSpeedBoost;
+
+    this.currentSpeedBoostTimeout = this.speedBoostTimeout / 10;
     if (this.wall?.angle !== 0) {
       this._currentHorizontalSpeedBoost =
         this.initialHorizontalSpeedBoost * this.horizontalSpeedSign;
+      speedBoost =
+        this.initialSpeedBoost *
+        Math.abs(Phaser.Math.DegToRad(this.wall.angle));
     } else {
       this._currentHorizontalSpeedBoost = 0;
     }
-    // logger.log("startWallRunning", this._currentSpeedBoost);
+    this._currentSpeedBoost += speedBoost;
+
     this._state = "wallRunning";
   }
 
@@ -214,9 +230,18 @@ export class WallRunningSystem {
 
     const rayResult = this.castRays(obstacles);
 
-    if (rayResult.canWallRun && rayResult.wallSide && rayResult.wall) {
-      
-      if(rayResult.normal?.y && rayResult.normal.y >= 0 && this.latestRayResult?.normal?.x !== 0){
+    if (
+      rayResult.canWallRun &&
+      rayResult.wallSide &&
+      rayResult.wall &&
+      (!rayResult.wall.angle ||
+        rayResult.wall.angle % 180 >= this.minimumWallRunningAngle)
+    ) {
+      if (
+        rayResult.normal?.y &&
+        rayResult.normal.y >= 0 &&
+        this.latestRayResult?.normal?.x !== 0
+      ) {
         this.latestRayResult = rayResult;
       }
 
@@ -245,7 +270,7 @@ export class WallRunningSystem {
 
     console.log("jump", this.state);
 
-    if(this.state === "jumping") return;
+    if (this.state === "jumping") return;
 
     logger.log("jump", this.wall, this.side);
 
@@ -271,10 +296,9 @@ export class WallRunningSystem {
 
     logger.log("jump force", force);
 
-    if(vector.x !== 0 || vector.y > 0){
-      this.speedBoostTimeoutTimer = 0
+    if (vector.x !== 0 || vector.y > 0) {
+      this.speedBoostTimeoutTimer = 0;
     }
-
 
     return force;
   }
@@ -307,12 +331,12 @@ export class WallRunningSystem {
 
     this.wallRunningEffects.startWallParticles(this.side);
 
-    let speedIncrease = this.speedBoostIncreasePerSecond * delta / 1000;
-    let maxSpeedBoost = this.maxSpeedBoost;
+    const speedIncrease = (this.speedBoostIncreasePerSecond * delta) / 1000;
+    const maxSpeedBoost = this.maxSpeedBoost;
 
-    if(this.wall?.angle){
-      speedIncrease *= Math.abs(this.wall.angle);
-      maxSpeedBoost *= Math.abs(this.wall.angle);
+    if (this.wall?.angle) {
+      // speedIncrease *= Math.abs(this.wall.angle);
+      // maxSpeedBoost *= Math.abs(this.wall.angle);
     }
 
     this._currentSpeedBoost += speedIncrease;
@@ -364,11 +388,26 @@ export class WallRunningSystem {
     return !!this.side;
   }
 
-  get state(){
+  get state() {
     return this._state;
   }
 
   get horizontalSpeedSign(): number {
     return this.side === "left" ? 1 : -1;
+  }
+
+  get angleToWall(): { angle: number; mirror: boolean } {
+    if (!this.wall) return { angle: 0, mirror: false };
+
+    if (this.wall.angle) {
+      const angle = this.wall.angle;
+      return { angle, mirror: this.side === "right" };
+    } else if (this.side === "left") {
+      return { angle: -90, mirror: false };
+    } else if (this.side === "right") {
+      return { angle: 90, mirror: true };
+    }
+
+    return { angle: 0, mirror: false };
   }
 }

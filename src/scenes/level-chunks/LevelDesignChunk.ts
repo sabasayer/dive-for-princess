@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import type { LevelDesignElement } from "../../types/LevelDesignElement";
 import { Obstacle } from "../../entities/Obstacle";
 import { Gem } from "../../entities/Gem";
+import { DamagingObstacle } from "../../entities/DamagingObstacles";
 
 export interface LevelDesignChunkOptions {
   scene: Phaser.Scene;
@@ -36,6 +37,18 @@ export class LevelDesignChunk {
         this.options.scene.add.existing(gem);
         this._elements.push(gem);
       }
+      if (element.type === "damagingObstacle") {
+        const damagingObstacle = new DamagingObstacle(
+          this.options.scene,
+          element.damagingObstacle,
+        );
+        damagingObstacle.setPosition(
+          this.options.position.x + element.damagingObstacle.x,
+          this.options.position.y + element.damagingObstacle.y,
+        );
+        this.options.scene.add.existing(damagingObstacle);
+        this._elements.push(damagingObstacle);
+      }
     });
   }
 
@@ -46,7 +59,9 @@ export class LevelDesignChunk {
   }
 
   get bottom() {
-    const lastItem = this._elements.toSorted((a, b) => a.y - b.y)[this._elements.length - 1];
+    const lastItem = this._elements.toSorted((a, b) => a.y - b.y)[
+      this._elements.length - 1
+    ];
     if (!lastItem) return 0;
     if (lastItem instanceof Obstacle) {
       return lastItem.y + lastItem.height * 2;
@@ -59,5 +74,9 @@ export class LevelDesignChunk {
 
   get elements() {
     return this._elements;
+  }
+
+  get levelWidth() {
+    return (this.options.scene as BaseLevel).levelWidth;
   }
 }

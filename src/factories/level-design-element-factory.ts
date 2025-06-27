@@ -1,3 +1,4 @@
+import type { DamagingObstacleOptions } from "../entities/DamagingObstacles";
 import type { LevelDesignElement } from "../types/LevelDesignElement";
 
 export const createObstacleElement = (
@@ -10,13 +11,13 @@ export const createObstacleElement = (
 };
 
 export const createDamagingObstacleElement = (
-  options: Omit<ObstacleOptions, "type">,
+  options: Omit<DamagingObstacleOptions, "type">,
 ): LevelDesignElement => {
   return {
-    type: "obstacle",
-    obstacle: {
+    type: "damagingObstacle",
+    damagingObstacle: {
       ...options,
-      type: "damaging",
+      physicsType: options.physicsType,
     },
   };
 };

@@ -7,21 +7,23 @@ export class Level1 extends BaseLevel {
     super({
       key: "level1",
       nextLevelKey: "level2",
-      groundY: 50000,
+      groundY: 10000,
       playerPosition: { x: 100, y: 100 },
       princessPosition: { x: 100, y: 300 },
     });
   }
 
   create() {
+    const boundaryWallsChunk = createBoundaryWallsChunk(this, { x: 0, y: 0 });
+    this.addChunks(boundaryWallsChunk);
     const beginningChunk = createBeginningChunk(this, { x: 0, y: 200 });
     this.addChunks(beginningChunk);
 
     let lastBottom = beginningChunk.bottom;
-    for(let i = 0; i < 20; i++){
+    for (let i = 0; i < 20; i++) {
       const wallJumpChunk = createWallJumpChunk(this, {
         x: 0,
-        y: lastBottom + 18,
+        y: lastBottom + 91,
       });
       lastBottom = wallJumpChunk.bottom;
       this.addChunks(wallJumpChunk);

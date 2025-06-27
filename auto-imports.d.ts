@@ -8,14 +8,19 @@ export {}
 declare global {
   const BaseLevel: typeof import('./src/scenes/BaseLevel')['BaseLevel']
   const BeginningChunk: typeof import('./src/scenes/level-chunks/BeginningChunk')['BeginningChunk']
+  const BoundaryWallsChunk: typeof import('./src/scenes/level-chunks/BoundaryWallsChunk')['BoundaryWallsChunk']
+  const DIMENSIONS: typeof import('./src/constants/dimensions')['DIMENSIONS']
+  const DamagingObstacle: typeof import('./src/entities/DamagingObstacles')['DamagingObstacle']
   const Gem: typeof import('./src/entities/Gem')['Gem']
   const Hook: typeof import('./src/systems/hook-system/hook')['Hook']
   const HookIndicator: typeof import('./src/systems/hook-system/indicator')['HookIndicator']
   const HookSystem: typeof import('./src/systems/hook-system/hook-system')['HookSystem']
+  const InGameUI: typeof import('./src/ui/InGameUI')['InGameUI']
   const Level1: typeof import('./src/scenes/levels/Level1')['Level1']
   const Level2: typeof import('./src/scenes/levels/Level2')['Level2']
   const Level3: typeof import('./src/scenes/levels/Level3')['Level3']
   const LevelDesignChunk: typeof import('./src/scenes/level-chunks/LevelDesignChunk')['LevelDesignChunk']
+  const LevelMap: typeof import('./src/ui/LevelMap')['LevelMap']
   const MainScene: typeof import('./src/scenes/MainScene')['default']
   const Obstacle: typeof import('./src/entities/Obstacle')['Obstacle']
   const Phaser: typeof import('phaser')['default']
@@ -24,7 +29,10 @@ declare global {
   const PlayerLifeUI: typeof import('./src/ui/PlayerLifeUI')['PlayerLifeUI']
   const Princess: typeof import('./src/entities/Princess')['Princess']
   const PrincessIndicator: typeof import('./src/ui/PrincessIndicator')['PrincessIndicator']
+  const SPRITESHEET_FRAMES: typeof import('./src/constants/spritesheet-frames')['SPRITESHEET_FRAMES']
   const SceneEnvironment: typeof import('./src/entities/SceneEnvironment')['default']
+  const TesetScene: typeof import('./src/scenes/TesetScene')['default']
+  const TestScene: typeof import('./src/scenes/TestScene')['default']
   const TitleScene: typeof import('./src/scenes/TitleScene')['default']
   const TransitionScene: typeof import('./src/scenes/TransitionSecene')['TransitionScene']
   const WallJumpChunk: typeof import('./src/scenes/level-chunks/WallJumpChunk')['WallJumpChunk']
@@ -32,6 +40,7 @@ declare global {
   const WallRunningSystem: typeof import('./src/systems/wall-running/wall-running')['WallRunningSystem']
   const colors: typeof import('./src/utils/colors')['colors']
   const createBeginningChunk: typeof import('./src/scenes/level-chunks/BeginningChunk')['createBeginningChunk']
+  const createBoundaryWallsChunk: typeof import('./src/scenes/level-chunks/BoundaryWallsChunk')['createBoundaryWallsChunk']
   const createDamagingObstacleElement: typeof import('./src/factories/level-design-element-factory')['createDamagingObstacleElement']
   const createGemElement: typeof import('./src/factories/level-design-element-factory')['createGemElement']
   const createObstacleElement: typeof import('./src/factories/level-design-element-factory')['createObstacleElement']
@@ -49,6 +58,9 @@ declare global {
 }
 // for type re-export
 declare global {
+  // @ts-ignore
+  export type { DamagingObstacle, DamagingObstacleOptions } from './src/entities/DamagingObstacles'
+  import('./src/entities/DamagingObstacles')
   // @ts-ignore
   export type { Gem } from './src/entities/Gem'
   import('./src/entities/Gem')
@@ -70,6 +82,9 @@ declare global {
   // @ts-ignore
   export type { BeginningChunk } from './src/scenes/level-chunks/BeginningChunk'
   import('./src/scenes/level-chunks/BeginningChunk')
+  // @ts-ignore
+  export type { BoundaryWallsChunk } from './src/scenes/level-chunks/BoundaryWallsChunk'
+  import('./src/scenes/level-chunks/BoundaryWallsChunk')
   // @ts-ignore
   export type { LevelDesignChunk, LevelDesignChunkOptions } from './src/scenes/level-chunks/LevelDesignChunk'
   import('./src/scenes/level-chunks/LevelDesignChunk')
@@ -101,8 +116,14 @@ declare global {
   export type { WallRunningSystem, WallRunningConfig, WallRunningSystemOptions } from './src/systems/wall-running/wall-running'
   import('./src/systems/wall-running/wall-running')
   // @ts-ignore
-  export type { LevelDesignElementWithObstacle, LevelDesignElementWithGem, LevelDesignElement } from './src/types/LevelDesignElement'
+  export type { LevelDesignElementWithObstacle, LevelDesignElementWithGem, LevelDesignElementWithDamagingObstacle, LevelDesignElement } from './src/types/LevelDesignElement'
   import('./src/types/LevelDesignElement')
+  // @ts-ignore
+  export type { InGameUI } from './src/ui/InGameUI'
+  import('./src/ui/InGameUI')
+  // @ts-ignore
+  export type { LevelMap } from './src/ui/LevelMap'
+  import('./src/ui/LevelMap')
   // @ts-ignore
   export type { PlayerGemCountUI } from './src/ui/PlayerGemCountUI'
   import('./src/ui/PlayerGemCountUI')

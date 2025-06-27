@@ -1,5 +1,4 @@
 import type { LevelDesignChunk } from "./level-chunks/LevelDesignChunk";
-import { WallRunningEffects } from "../systems/wall-running/wall-running-effects";
 import { PrincessIndicator } from "../ui/PrincessIndicator";
 
 export interface LevelOptions {
@@ -21,6 +20,7 @@ export class BaseLevel extends Phaser.Scene {
   private isRestarting = false;
   private isStarting = false;
   private princessIndicator?: PrincessIndicator;
+  private inGameUI?: InGameUI;
 
   constructor(private options: LevelOptions) {
     super({ key: options.key });
@@ -38,9 +38,10 @@ export class BaseLevel extends Phaser.Scene {
     this.setupCamera();
     this.createBackgroundTiles();
     this.createGround();
+    this.createPrincessIndicator();
+    this.createInGameUI();
     this.setObstacles();
     this.setupCollisionEvents();
-    this.createPrincessIndicator();
   }
 
   update(_: number, delta: number) {
@@ -49,6 +50,7 @@ export class BaseLevel extends Phaser.Scene {
     this.chunks.forEach((chunk) => {
       chunk.update();
     });
+    this.inGameUI?.update();
     this.princess?.update();
     this.handleNextLevel();
     this.handleGameOver();
@@ -56,7 +58,12 @@ export class BaseLevel extends Phaser.Scene {
   }
 
   private createPrincessIndicator() {
-    this.princessIndicator = new PrincessIndicator(this,this.player!);
+    this.princessIndicator = new PrincessIndicator(this, this.player!);
+  }
+
+  private createInGameUI() {
+    this.inGameUI = new InGameUI(this);
+    this.add.existing(this.inGameUI);
   }
 
   private handleNextLevel() {
@@ -70,8 +77,11 @@ export class BaseLevel extends Phaser.Scene {
   }
 
   private handleGameOver() {
-
     if (this.player?.hasHitGround(this.options.groundY)) {
+      this.restart();
+    }
+
+    if (this.princess?.hasHitGround(this.options.groundY)) {
       this.restart();
     }
 
@@ -80,23 +90,25 @@ export class BaseLevel extends Phaser.Scene {
     }
   }
 
-  private restart(){
-    if(this.isRestarting) return;
+  private restart() {
+    if (this.isRestarting) return;
 
     this.startLevel(this.scene.key, { restart: true });
     this.isRestarting = true;
   }
 
-  private startLevel(levelKey: string, data?: object){
-    if(this.isStarting) return;
+  private startLevel(levelKey: string, data?: object) {
+    if (this.isStarting) return;
 
     this.isStarting = true;
-    this.scene.launch('TransitionScene', {
+    this.scene.launch("TransitionScene", {
       nextScene: levelKey,
       previousScene: this.scene.key, // <--- NEW: Pass the current scene's key
       data,
-      duration: 500,
-      color: colors.orange
+      duration: 1000,
+      color: colors.orange,
+      tileSize: 16,
+      tileGap: 1,
     });
   }
 
@@ -209,5 +221,13 @@ export class BaseLevel extends Phaser.Scene {
 
   private get gameWidth(): number {
     return this.game.config.width as number;
+  }
+
+  get levelWidth(): number {
+    return this.gameWidth - DIMENSIONS.inGameUIWidth;
+  }
+
+  get groundY(): number {
+    return this.options.groundY;
   }
 }

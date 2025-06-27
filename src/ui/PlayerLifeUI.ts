@@ -1,42 +1,51 @@
-export class PlayerLifeUI {
-  private lifes: Phaser.GameObjects.Rectangle[] = [];
-  constructor(
-    private scene: Phaser.Scene,
-    private player: Player,
-  ) {
-    this.createLifes(player.life);
+import { colors } from "../utils/colors";
+
+export class PlayerLifeUI extends Phaser.GameObjects.Container {
+  private lives: Phaser.GameObjects.Rectangle[] = [];
+  private player?: Player;
+
+  constructor(scene: Phaser.Scene) {
+    super(scene);
+
+    this.setPlayer();
+    this.createLives(this.player?.life ?? 0);
   }
 
-  createLifes(lifes: number) {
-    for (let i = 0; i < lifes; i++) {
-      const life = this.scene.add.rectangle(
-        i,
-        0,
-        4,
-        4,
-        colors.red,
-      );
+  createLives(lives: number) {
+    if (this.lives.length) return;
+
+    for (let i = 0; i < lives; i++) {
+      const life = this.scene.add.rectangle(i * 6, 0, 4, 4, colors.red);
+      this.add(life);
       life.setOrigin(0, 0);
-      this.lifes.push(life);
+      this.lives.push(life);
     }
   }
 
-  updateLifes(lifes: number) {
-    this.lifes.forEach((life, index) => {
-      life.setVisible(index < lifes);
+  updateLives(lives: number) {
+    this.lives.forEach((life, index) => {
+      life.setVisible(index < lives);
     });
   }
 
   update() {
-    const gap = 4;
-    this.lifes.forEach((life, index) => {
-      life.setPosition(this.player.x - (this.player.width/2) + index * (4 + gap), this.player.y - 16);
-    });
-    this.updateLifes(this.player.life);
+    if (!this.player) return;
+    const player = this.player;
+
+    this.updateLives(player.life);
+  }
+
+  setPlayer() {
+    if (this.player) return;
+
+    const player = this.scene.children.getByName("player") as Player;
+    if (!player) return;
+
+    this.player = player;
   }
 
   destroy() {
-    this.lifes.forEach((life) => {
+    this.lives.forEach((life) => {
       life.destroy();
     });
   }
