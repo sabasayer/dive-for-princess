@@ -153,7 +153,7 @@ export class WallRunningSystem {
     const playerBounds = this.player.getBounds();
     const rays: Phaser.Geom.Line[] = [];
     const padding = 1;
-    const gap = playerBounds.height / (this.rayCount - 1) - 4;
+    const gap = playerBounds.height / (this.rayCount - 1);
 
     for (let i = 0; i < this.rayCount; i++) {
       // Left ray
@@ -235,7 +235,7 @@ export class WallRunningSystem {
       rayResult.wallSide &&
       rayResult.wall &&
       (!rayResult.wall.angle ||
-        rayResult.wall.angle % 180 >= this.minimumWallRunningAngle)
+        Math.abs(rayResult.wall.angle) % 180 >= this.minimumWallRunningAngle)
     ) {
       if (
         rayResult.normal?.y &&
@@ -276,22 +276,17 @@ export class WallRunningSystem {
 
     if (!this.wall || !this.side) return;
 
-    const rays = this.createRays();
-
-    let rayResult = this.getCollisionWithRays(this.wall, rays);
-
-    if (!rayResult?.normal && this.latestRayResult) {
-      rayResult = this.latestRayResult;
-      logger.log("latestRayResult", this.latestRayResult);
-    }
-
-    if (!rayResult?.normal) return;
-
     this._state = "jumping";
 
-    const normal = rayResult.normal;
-    const direction = Matter.Vector.neg(normal);
-    const vector = new Phaser.Math.Vector2(direction.x, direction.y);
+    const angle = this.angleToWall;
+
+    const angleRad = Phaser.Math.DegToRad(angle.angle);
+
+    const normal = Matter.Vector.create(
+      -Math.sin(angleRad),
+      -Math.cos(angleRad),
+    );
+    const vector = new Phaser.Math.Vector2(normal.x, normal.y);
     const force = vector.scale(this.jumpForce);
 
     logger.log("jump force", force);

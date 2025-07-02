@@ -8,13 +8,15 @@ export default class TestScene extends BaseLevel {
       groundY: 10000,
       playerPosition: { x: 100, y: 100 },
       princessPosition: { x: 190, y: 200 },
+      backgroundColor: colors.black,
+      backgroundTileStrokeColor: colors.white,
     });
   }
 
   create() {
     const diagonalWall = createWallObstacleElement({
-      x: 160,
-      y: 200,
+      x: 40,
+      y: 300,
       width: 10,
       height: 100,
       angle: -45,
@@ -37,26 +39,46 @@ export default class TestScene extends BaseLevel {
     });
 
     const damagingObstacle = createDamagingObstacleElement({
-      x: 190,
+      x: 120,
       y: 350,
       width: 10,
       height: 10,
-      physicsType: "static",
+    });
+
+    const movingObstacle = createDamagingObstacleElement({
+      x: 160,
+      y: 100,
+      width: 10,
+      height: 10,
+      isStatic: false,
+      initialVelocity: { x: 0, y: 2 },
+      elementType: "projectile",
     });
 
     const verticalWall = createWallObstacleElement({
       x: 50,
-      y: 400,
+      y: 500,
       width: 10,
       height: 100,
     });
 
     const verticalWall2 = createWallObstacleElement({
       x: 130,
-      y: 400,
+      y: 500,
       width: 10,
       height: 100,
     });
+
+    const randomGems = [];
+
+    for (let i = 0; i < 60; i++) {
+      randomGems.push(
+        createGemElement({
+          x: Math.random() * DIMENSIONS.gameWidth,
+          y: Math.random() * DIMENSIONS.gameHeight,
+        }),
+      );
+    }
 
     const chunk = new LevelDesignChunk({
       scene: this,
@@ -67,10 +89,36 @@ export default class TestScene extends BaseLevel {
         diagonalWall2,
         verticalWall,
         verticalWall2,
+        movingObstacle,
+        ...randomGems,
       ],
       position: { x: 0, y: 0 },
     });
     this.addChunks(chunk);
+
+    const projectileSystem = new ProjectileSystem({
+      scene: this,
+      direction: "topToBottom",
+      numberOfProjectilesEachSpawn: 10,
+      projectileSpeed: 10,
+      spawnInterval: 1000,
+      startPosition: { x: 50, y: 100 },
+      projectileSize: { width: 10, height: 10 },
+    });
+
+    const projectileSystem2 = new ProjectileSystem({
+      scene: this,
+      direction: "bottomToTop",
+      numberOfProjectilesEachSpawn: 10,
+      projectileSpeed: 10,
+      spawnInterval: 1000,
+      startPosition: { x: 50, y: 600 },
+      projectileSize: { width: 10, height: 10 },
+    });
+
+    this.addProjectileSystem(projectileSystem);
+    this.addProjectileSystem(projectileSystem2);
+
     super.create();
   }
 }

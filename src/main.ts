@@ -15,7 +15,7 @@ const config: Phaser.Types.Core.GameConfig = {
     default: "matter",
     matter: {
       gravity: { x: 0, y: 0.03 },
-      debug: true,
+      debug: false,
     },
   },
   scene: [MainScene, TestScene, Level1, Level2, Level3, TransitionScene],

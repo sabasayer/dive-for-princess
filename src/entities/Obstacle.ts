@@ -61,6 +61,19 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
     this._type = options.type;
     this._physicsType = options.physicsType;
     this.createDebugInfo();
+
+    this.setOnCollide(
+      (event: Phaser.Types.Physics.Matter.MatterCollisionPair) =>
+        this.onCollide(event),
+    );
+  }
+
+  onCollide(event: Phaser.Types.Physics.Matter.MatterCollisionPair) {
+    const player = getPlayerFromCollision(event);
+
+    if (player) {
+      player.onCollisionWithObstacle();
+    }
   }
 
   public static createSprite(scene: Phaser.Scene) {

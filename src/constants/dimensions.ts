@@ -1,5 +1,7 @@
 export const DIMENSIONS = {
   inGameUIWidth: 30,
+  gameWidth: 256,
+  gameHeight: 224,
   obstacleDimensions: {
     small: {
       width: 8,

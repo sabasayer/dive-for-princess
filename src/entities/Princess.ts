@@ -7,7 +7,13 @@ export class Princess extends Phaser.Physics.Matter.Sprite {
   private isSaved = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene.matter.world, x, y, "princess");
+    super(
+      scene.matter.world,
+      x,
+      y,
+      "spritesheet_transparent",
+      SPRITESHEET_FRAMES.princess,
+    );
 
     this.scene.add.existing(this);
     this.setName("princess");

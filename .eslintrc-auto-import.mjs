@@ -3,6 +3,7 @@ export default {
     "BaseLevel": true,
     "BeginningChunk": true,
     "BoundaryWallsChunk": true,
+    "COLLISION_GROUPS": true,
     "DIMENSIONS": true,
     "DamagingObstacle": true,
     "DamagingObstacleOptions": true,
@@ -31,6 +32,8 @@ export default {
     "PlayerLifeUI": true,
     "Princess": true,
     "PrincessIndicator": true,
+    "ProjectileSystem": true,
+    "ProjectileSystemOptions": true,
     "SPRITESHEET_FRAMES": true,
     "SceneEnvironment": true,
     "TestScene": true,
@@ -53,6 +56,7 @@ export default {
     "getClosestPointToSourceWithAngle": true,
     "getColisionSide": true,
     "getDangerousObstacles": true,
+    "getPlayerFromCollision": true,
     "getRunnableObstacles": true,
     "logger": true
   }

@@ -4,9 +4,19 @@ import { colors } from "../utils/colors";
 
 export class Gem extends Phaser.Physics.Matter.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene.matter.world, x, y, "gem");
+    super(
+      scene.matter.world,
+      x,
+      y,
+      "spritesheet_transparent",
+      SPRITESHEET_FRAMES.gem,
+    );
     this.setName("gem");
     this.setupGem();
+    this.setOnCollide(
+      (event: Phaser.Types.Physics.Matter.MatterCollisionPair) =>
+        this.onCollide(event),
+    );
   }
 
   static createSprite(scene: Phaser.Scene) {
@@ -26,5 +36,13 @@ export class Gem extends Phaser.Physics.Matter.Sprite {
       isStatic: true,
       isSensor: true,
     });
+  }
+
+  private onCollide(event: Phaser.Types.Physics.Matter.MatterCollisionPair) {
+    const player = getPlayerFromCollision(event);
+
+    if (player) {
+      (player as Player).onCollisionWithGem(this);
+    }
   }
 }

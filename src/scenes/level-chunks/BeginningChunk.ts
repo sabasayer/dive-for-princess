@@ -65,30 +65,18 @@ export class BeginningChunk extends LevelDesignChunk {
             y: 440,
           },
         },
-        {
-          type: "obstacle",
-          obstacle: {
-            height: mediumObstacleDimensions.height,
-            width: mediumObstacleDimensions.width,
-            type: "damaging",
-            physicsType: "static",
-            weight: 0,
-            x: 120,
-            y: 430,
-          },
-        },
-        {
-          type: "obstacle",
-          obstacle: {
-            height: smallObstacleDimensions.height,
-            width: smallObstacleDimensions.width,
-            type: "damaging",
-            physicsType: "static",
-            weight: 0,
-            x: 220,
-            y: 440,
-          },
-        },
+        createDamagingObstacleElement({
+          height: mediumObstacleDimensions.height,
+          width: mediumObstacleDimensions.width,
+          x: 120,
+          y: 430,
+        }),
+        createDamagingObstacleElement({
+          height: smallObstacleDimensions.height,
+          width: smallObstacleDimensions.width,
+          x: 220,
+          y: 440,
+        }),
       ],
     });
   }

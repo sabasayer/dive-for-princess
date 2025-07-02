@@ -30,3 +30,13 @@ export const getColisionSide = (
     y: side === "top" ? -1 : side === "bottom" ? 1 : 0,
   };
 };
+
+export const getPlayerFromCollision = (
+  event: Phaser.Types.Physics.Matter.MatterCollisionPair,
+): Player | null => {
+  return event.bodyA.gameObject?.name === "player"
+    ? (event.bodyA.gameObject as Player)
+    : event.bodyB.gameObject?.name === "player"
+      ? (event.bodyB.gameObject as Player)
+      : null;
+};

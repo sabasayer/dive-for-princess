@@ -316,16 +316,18 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     super.destroy(fromScene);
   }
 
-  onCollisionWithObstacle(obstacle: Obstacle) {
+  onCollisionWithObstacle() {
+    this.hookSystem.finishHooking();
+  }
+
+  onCollisionWithDamagingObstacle(damagingObstacle: DamagingObstacle) {
     this.hookSystem.finishHooking();
 
-    const collisionPoints = this.getCollisionPoints(obstacle);
+    const collisionPoints = this.getCollisionPoints(damagingObstacle);
 
     if (collisionPoints.length === 0) return;
 
-    if (obstacle.obstacleType === "damaging") {
-      this.handleCollisionWithDangerousObstacle(collisionPoints);
-    }
+    this.handleCollisionWithDangerousObstacle(collisionPoints);
   }
 
   onCollisionWithGem(gem: Gem) {
@@ -394,7 +396,9 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     }
   }
 
-  getCollisionPoints(obstacle: Obstacle): { x: number; y: number }[] {
+  getCollisionPoints(
+    obstacle: Obstacle | DamagingObstacle,
+  ): { x: number; y: number }[] {
     const playerBounds = this.getBounds();
     const obstacleBounds = obstacle.getBounds();
 

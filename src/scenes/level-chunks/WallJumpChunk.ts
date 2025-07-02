@@ -81,7 +81,6 @@ export class WallJumpChunk extends LevelDesignChunk {
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
-        physicsType: "static",
       });
     };
 

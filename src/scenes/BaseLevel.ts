@@ -9,6 +9,7 @@ export interface LevelOptions {
   playerPosition: { x: number; y: number };
   princessPosition: { x: number; y: number };
   backgroundColor?: number;
+  backgroundTileStrokeColor?: number;
 }
 
 export class BaseLevel extends Phaser.Scene {
@@ -21,6 +22,7 @@ export class BaseLevel extends Phaser.Scene {
   private isStarting = false;
   private princessIndicator?: PrincessIndicator;
   private inGameUI?: InGameUI;
+  private projectileSystems: ProjectileSystem[] = [];
 
   constructor(private options: LevelOptions) {
     super({ key: options.key });
@@ -36,12 +38,12 @@ export class BaseLevel extends Phaser.Scene {
     this.setPlayer();
     this.setPrincess();
     this.setupCamera();
+    this.createBackground();
     this.createBackgroundTiles();
     this.createGround();
     this.createPrincessIndicator();
     this.createInGameUI();
     this.setObstacles();
-    this.setupCollisionEvents();
   }
 
   update(_: number, delta: number) {
@@ -49,6 +51,9 @@ export class BaseLevel extends Phaser.Scene {
     this.player?.update(delta, obstacles as Obstacle[]);
     this.chunks.forEach((chunk) => {
       chunk.update();
+    });
+    this.projectileSystems.forEach((system) => {
+      system.update(delta);
     });
     this.inGameUI?.update();
     this.princess?.update();
@@ -154,10 +159,17 @@ export class BaseLevel extends Phaser.Scene {
     );
   }
 
+  private createBackground() {
+    const graphics = this.add.graphics();
+    graphics.setDepth(-1);
+    graphics.fillStyle(this.options.backgroundColor ?? 0xffa500);
+    graphics.fillRect(0, 0, this.gameWidth, this.groundY);
+  }
+
   private createBackgroundTiles() {
     const graphics = this.add.graphics();
     graphics.setDepth(-1);
-    const color = this.options.backgroundColor ?? 0xffa500;
+    const color = this.options.backgroundTileStrokeColor ?? 0xffa500;
     graphics.lineStyle(1, color, 0.2);
 
     for (let y = -100; y < this.options.groundY; y += this.tileSize) {
@@ -173,54 +185,12 @@ export class BaseLevel extends Phaser.Scene {
     graphics.fillRect(0, this.options.groundY, this.gameWidth, 100);
   }
 
-  private setupCollisionEvents() {
-    if (!this.player || !this.obstacles) return;
-
-    this.matter.world.on("collisionstart", (event: any) => {
-      const pairs = event.pairs;
-
-      for (const pair of pairs) {
-        const { bodyA, bodyB } = pair;
-
-        let player: Player | null = null;
-        let obstacle: Obstacle | null = null;
-        let gem: Gem | null = null;
-
-        if (bodyA.gameObject?.name === "player") {
-          player = bodyA.gameObject as Player;
-        } else if (bodyB.gameObject?.name === "player") {
-          player = bodyB.gameObject as Player;
-        }
-
-        if (bodyA.gameObject?.name === "obstacle") {
-          obstacle = bodyA.gameObject as Obstacle;
-        } else if (bodyB.gameObject?.name === "obstacle") {
-          obstacle = bodyB.gameObject as Obstacle;
-        }
-
-        if (bodyA.gameObject?.name === "gem") {
-          gem = bodyA.gameObject as Gem;
-        } else if (bodyB.gameObject?.name === "gem") {
-          gem = bodyB.gameObject as Gem;
-        }
-
-        if (player && obstacle) {
-          this.handleCollision(player, obstacle);
-        }
-
-        if (player && gem) {
-          player.onCollisionWithGem(gem);
-        }
-      }
-    });
-  }
-
-  private handleCollision(player: Player, obstacle: Obstacle) {
-    player.onCollisionWithObstacle(obstacle);
-  }
-
   private get gameWidth(): number {
     return this.game.config.width as number;
+  }
+
+  protected addProjectileSystem(projectileSystem: ProjectileSystem) {
+    this.projectileSystems.push(projectileSystem);
   }
 
   get levelWidth(): number {

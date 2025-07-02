@@ -9,6 +9,7 @@ declare global {
   const BaseLevel: typeof import('./src/scenes/BaseLevel')['BaseLevel']
   const BeginningChunk: typeof import('./src/scenes/level-chunks/BeginningChunk')['BeginningChunk']
   const BoundaryWallsChunk: typeof import('./src/scenes/level-chunks/BoundaryWallsChunk')['BoundaryWallsChunk']
+  const COLLISION_GROUPS: typeof import('./src/constants/collision-groups')['COLLISION_GROUPS']
   const DIMENSIONS: typeof import('./src/constants/dimensions')['DIMENSIONS']
   const DamagingObstacle: typeof import('./src/entities/DamagingObstacles')['DamagingObstacle']
   const Gem: typeof import('./src/entities/Gem')['Gem']
@@ -29,8 +30,11 @@ declare global {
   const PlayerLifeUI: typeof import('./src/ui/PlayerLifeUI')['PlayerLifeUI']
   const Princess: typeof import('./src/entities/Princess')['Princess']
   const PrincessIndicator: typeof import('./src/ui/PrincessIndicator')['PrincessIndicator']
+  const ProjectileSystem: typeof import('./src/systems/projectile-system/projectile-system')['ProjectileSystem']
   const SPRITESHEET_FRAMES: typeof import('./src/constants/spritesheet-frames')['SPRITESHEET_FRAMES']
   const SceneEnvironment: typeof import('./src/entities/SceneEnvironment')['default']
+  const SpriteFont: typeof import('./src/ui/SpriteFont')['SpriteFont']
+  const SpriteFontHelper: typeof import('./src/utils/sprite-font-helper')['SpriteFontHelper']
   const TesetScene: typeof import('./src/scenes/TesetScene')['default']
   const TestScene: typeof import('./src/scenes/TestScene')['default']
   const TitleScene: typeof import('./src/scenes/TitleScene')['default']
@@ -52,7 +56,9 @@ declare global {
   const getClosestPointToSource: typeof import('./src/utils/obstacle')['getClosestPointToSource']
   const getClosestPointToSourceWithAngle: typeof import('./src/utils/obstacle')['getClosestPointToSourceWithAngle']
   const getColisionSide: typeof import('./src/utils/collision')['getColisionSide']
+  const getCollisionWithPlayer: typeof import('./src/utils/collision')['getCollisionWithPlayer']
   const getDangerousObstacles: typeof import('./src/utils/obstacle')['getDangerousObstacles']
+  const getPlayerFromCollision: typeof import('./src/utils/collision')['getPlayerFromCollision']
   const getRunnableObstacles: typeof import('./src/utils/obstacle')['getRunnableObstacles']
   const logger: typeof import('./src/utils/logger')['logger']
 }
@@ -109,6 +115,9 @@ declare global {
   // @ts-ignore
   export type { HookIndicator } from './src/systems/hook-system/indicator'
   import('./src/systems/hook-system/indicator')
+  // @ts-ignore
+  export type { ProjectileSystem, ProjectileSystemOptions } from './src/systems/projectile-system/projectile-system'
+  import('./src/systems/projectile-system/projectile-system')
   // @ts-ignore
   export type { WallRunningEffects } from './src/systems/wall-running/wall-running-effects'
   import('./src/systems/wall-running/wall-running-effects')
