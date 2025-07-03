@@ -250,6 +250,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     if (!hookPosition) return;
 
     this.hookSystem.throwHook();
+    this.jumpActionsPressed = false;
   }
 
   private handleHooking() {

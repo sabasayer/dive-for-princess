@@ -10,6 +10,8 @@ export class Level1 extends BaseLevel {
       groundY: 10000,
       playerPosition: { x: 100, y: 100 },
       princessPosition: { x: 100, y: 300 },
+      backgroundColor: colors.black,
+      backgroundTileStrokeColor: colors.lightGray,
     });
   }
 
@@ -30,6 +32,20 @@ export class Level1 extends BaseLevel {
     }
 
     this.addChunks(beginningChunk);
+
+    const projectileSystem = new ProjectileSystem({
+      scene: this,
+      direction: "topToBottom",
+      numberOfProjectilesEachSpawn: 3,
+      distanceBetweenProjectiles: 50,
+      projectileSpeed: 2,
+      spawnInterval: 10000,
+      startPosition: { x: 50, y: 100 },
+      projectileSize: { width: 10, height: 10 },
+    });
+
+    this.addProjectileSystem(projectileSystem);
+
     super.create();
   }
 }

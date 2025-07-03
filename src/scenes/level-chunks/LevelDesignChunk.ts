@@ -4,17 +4,21 @@ import type { LevelDesignElement } from "../../types/LevelDesignElement";
 import { Obstacle } from "../../entities/Obstacle";
 import { Gem } from "../../entities/Gem";
 import { DamagingObstacle } from "../../entities/DamagingObstacles";
+import type { ProjectileSystemOptions } from "../../systems/projectile-system/projectile-system";
 
 export interface LevelDesignChunkOptions {
   scene: Phaser.Scene;
   position: { x: number; y: number };
   elements: LevelDesignElement[];
+  projectileSystems?: ProjectileSystemOptions[];
 }
 
 export class LevelDesignChunk {
   private _elements: Phaser.GameObjects.GameObject[] = [];
+  private _projectileSystems: ProjectileSystem[] = [];
   constructor(private options: LevelDesignChunkOptions) {
     this.addElements();
+    this.addProjectileSystems();
   }
 
   addElements() {
@@ -52,9 +56,26 @@ export class LevelDesignChunk {
     });
   }
 
-  update() {
+  addProjectileSystems() {
+    this.options.projectileSystems?.forEach((projectileSystem) => {
+      const system = new ProjectileSystem({
+        ...projectileSystem,
+        scene: this.options.scene,
+        startPosition: {
+          x: this.options.position.x + projectileSystem.startPosition.x,
+          y: this.options.position.y + projectileSystem.startPosition.y,
+        },
+      });
+      this._projectileSystems.push(system);
+    });
+  }
+
+  update(delta: number) {
     this._elements.forEach((element) => {
-      element.update();
+      element.update(delta);
+    });
+    this._projectileSystems.forEach((system) => {
+      system.update(delta);
     });
   }
 
@@ -63,11 +84,17 @@ export class LevelDesignChunk {
       this._elements.length - 1
     ];
     if (!lastItem) return 0;
-    if (lastItem instanceof Obstacle) {
-      return lastItem.y + lastItem.height * 2;
+    if (lastItem.name === "obstacle") {
+      const obstacle = lastItem as Obstacle;
+      return obstacle.y + obstacle.height * 2;
     }
-    if (lastItem instanceof Gem) {
-      return lastItem.y + lastItem.height;
+    if (lastItem.name === "damagingObstacle") {
+      const damagingObstacle = lastItem as DamagingObstacle;
+      return damagingObstacle.y + damagingObstacle.height * 2;
+    }
+    if (lastItem.name === "gem") {
+      const gem = lastItem as Gem;
+      return gem.y + gem.height;
     }
     return 0;
   }

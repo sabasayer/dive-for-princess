@@ -13,6 +13,7 @@ declare global {
   const DIMENSIONS: typeof import('./src/constants/dimensions')['DIMENSIONS']
   const DamagingObstacle: typeof import('./src/entities/DamagingObstacles')['DamagingObstacle']
   const Gem: typeof import('./src/entities/Gem')['Gem']
+  const Ground: typeof import('./src/entities/Gorund')['Ground']
   const Hook: typeof import('./src/systems/hook-system/hook')['Hook']
   const HookIndicator: typeof import('./src/systems/hook-system/indicator')['HookIndicator']
   const HookSystem: typeof import('./src/systems/hook-system/hook-system')['HookSystem']
@@ -70,6 +71,9 @@ declare global {
   // @ts-ignore
   export type { Gem } from './src/entities/Gem'
   import('./src/entities/Gem')
+  // @ts-ignore
+  export type { Ground, GroundOptions } from './src/entities/Gorund'
+  import('./src/entities/Gorund')
   // @ts-ignore
   export type { Obstacle, ObstacleOptions } from './src/entities/Obstacle'
   import('./src/entities/Obstacle')

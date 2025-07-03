@@ -50,7 +50,7 @@ export class BaseLevel extends Phaser.Scene {
     const obstacles = this.obstacles;
     this.player?.update(delta, obstacles as Obstacle[]);
     this.chunks.forEach((chunk) => {
-      chunk.update();
+      chunk.update(delta);
     });
     this.projectileSystems.forEach((system) => {
       system.update(delta);
@@ -162,14 +162,14 @@ export class BaseLevel extends Phaser.Scene {
   private createBackground() {
     const graphics = this.add.graphics();
     graphics.setDepth(-1);
-    graphics.fillStyle(this.options.backgroundColor ?? 0xffa500);
+    graphics.fillStyle(this.options.backgroundColor ?? colors.black);
     graphics.fillRect(0, 0, this.gameWidth, this.groundY);
   }
 
   private createBackgroundTiles() {
     const graphics = this.add.graphics();
     graphics.setDepth(-1);
-    const color = this.options.backgroundTileStrokeColor ?? 0xffa500;
+    const color = this.options.backgroundTileStrokeColor ?? colors.blue;
     graphics.lineStyle(1, color, 0.2);
 
     for (let y = -100; y < this.options.groundY; y += this.tileSize) {
@@ -181,7 +181,7 @@ export class BaseLevel extends Phaser.Scene {
 
   private createGround() {
     const graphics = this.add.graphics();
-    graphics.fillStyle(0xffa500);
+    graphics.fillStyle(colors.red);
     graphics.fillRect(0, this.options.groundY, this.gameWidth, 100);
   }
 

@@ -9,7 +9,7 @@ export default class TestScene extends BaseLevel {
       playerPosition: { x: 100, y: 100 },
       princessPosition: { x: 190, y: 200 },
       backgroundColor: colors.black,
-      backgroundTileStrokeColor: colors.white,
+      backgroundTileStrokeColor: colors.black,
     });
   }
 
@@ -40,9 +40,10 @@ export default class TestScene extends BaseLevel {
 
     const damagingObstacle = createDamagingObstacleElement({
       x: 120,
-      y: 350,
+      y: 750,
       width: 10,
       height: 10,
+      rotationSpeed: 1,
     });
 
     const movingObstacle = createDamagingObstacleElement({
@@ -70,12 +71,22 @@ export default class TestScene extends BaseLevel {
     });
 
     const randomGems = [];
+    const randomDamagingObstacles = [];
 
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 20; i++) {
       randomGems.push(
         createGemElement({
           x: Math.random() * DIMENSIONS.gameWidth,
-          y: Math.random() * DIMENSIONS.gameHeight,
+          y: Math.random() * 1000,
+        }),
+      );
+      randomDamagingObstacles.push(
+        createDamagingObstacleElement({
+          x: Math.random() * DIMENSIONS.gameWidth,
+          y: Math.random() * 1000,
+          width: 10,
+          height: 10,
+          rotationSpeed: Math.random() * 10,
         }),
       );
     }
@@ -91,6 +102,7 @@ export default class TestScene extends BaseLevel {
         verticalWall2,
         movingObstacle,
         ...randomGems,
+        ...randomDamagingObstacles,
       ],
       position: { x: 0, y: 0 },
     });
@@ -116,8 +128,8 @@ export default class TestScene extends BaseLevel {
       projectileSize: { width: 10, height: 10 },
     });
 
-    this.addProjectileSystem(projectileSystem);
-    this.addProjectileSystem(projectileSystem2);
+    //this.addProjectileSystem(projectileSystem);
+    //this.addProjectileSystem(projectileSystem2);
 
     super.create();
   }

@@ -17,7 +17,7 @@ export const SPRITESHEET_FRAMES = {
   },
   princess: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 9 + 18,
   wall: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 13,
-  damaging: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 10 + 14,
+  damaging: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 11 + 30,
   projectile: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 10 + 15,
   gem: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 4 + 23,
 };

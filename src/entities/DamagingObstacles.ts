@@ -12,12 +12,14 @@ export interface DamagingObstacleOptions {
   angle?: number;
   isStatic?: boolean;
   initialVelocity?: Matter.Vector;
+  rotationSpeed?: number;
   elementType?: "projectile" | "trap";
 }
 
 export class DamagingObstacle extends Phaser.Physics.Matter.Sprite {
   declare body: BodyType | null;
   private elementType: "projectile" | "trap" = "trap";
+  private rotationSpeed = 0;
 
   constructor(scene: Phaser.Scene, options: DamagingObstacleOptions) {
     let frame = SPRITESHEET_FRAMES.damaging;
@@ -33,9 +35,12 @@ export class DamagingObstacle extends Phaser.Physics.Matter.Sprite {
       frame,
     );
 
+    this.setTint(colors.red);
+
     this.setName("damagingObstacle");
-    this.setScale(options.width / 16, options.height / 16);
     this.setAngle(options.angle || 0);
+
+    this.rotationSpeed = options.rotationSpeed || 0;
 
     if (options.elementType) {
       this.elementType = options.elementType;
@@ -46,6 +51,8 @@ export class DamagingObstacle extends Phaser.Physics.Matter.Sprite {
       isStatic: options.isStatic ?? true,
       angle: options.angle || 0,
     });
+    this.width = options.width;
+    this.height = options.height;
     this.setFriction(0);
     this.setFrictionAir(0);
     this.setIgnoreGravity(true);
@@ -69,5 +76,15 @@ export class DamagingObstacle extends Phaser.Physics.Matter.Sprite {
     if (this.elementType === "projectile") {
       this.destroy();
     }
+  }
+
+  rotate(delta: number) {
+    if (this.rotationSpeed === 0) return;
+    this.setAngle(this.angle + this.rotationSpeed * delta);
+  }
+
+  update(delta: number) {
+    this.rotate(delta);
+    super.update(delta);
   }
 }

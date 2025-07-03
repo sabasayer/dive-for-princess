@@ -13,58 +13,36 @@ export class BeginningChunk extends LevelDesignChunk {
       scene,
       position,
       elements: [
-        {
-          type: "obstacle",
-          obstacle: {
-            height: 20,
-            width: 20,
-            type: "damaging",
-            physicsType: "static",
-            weight: 0,
-            x: 120,
-            y: 300,
-          },
-        },
-        {
-          type: "obstacle",
-          obstacle: {
-            height: 8,
-            width: 80,
-            type: "wall",
-            physicsType: "static",
-            weight: 0,
-            x: 70,
-            y: 220,
-            angle: -48,
-          },
-        },
-        {
-          type: "obstacle",
-          obstacle: {
-            height: 8,
-            width: 80,
-            type: "wall",
-            physicsType: "static",
-            weight: 0,
-            x: 160,
-            y: 220,
-            angle: 48,
-          },
-        },
-        {
-          type: "gem",
-          gem: {
-            x: 130,
-            y: 210,
-          },
-        },
-        {
-          type: "gem",
-          gem: {
-            x: 140,
-            y: 440,
-          },
-        },
+        createDamagingObstacleElement({
+          height: 20,
+          width: 20,
+          x: 120,
+          y: 300,
+        }),
+        createWallObstacleElement({
+          height: 8,
+          width: 80,
+          weight: 0,
+          x: 70,
+          y: 220,
+          angle: -48,
+        }),
+        createWallObstacleElement({
+          height: 8,
+          width: 80,
+          weight: 0,
+          x: 160,
+          y: 220,
+          angle: 48,
+        }),
+        createGemElement({
+          x: 130,
+          y: 210,
+        }),
+        createGemElement({
+          x: 220,
+          y: 440,
+        }),
         createDamagingObstacleElement({
           height: mediumObstacleDimensions.height,
           width: mediumObstacleDimensions.width,
