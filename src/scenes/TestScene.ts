@@ -108,29 +108,6 @@ export default class TestScene extends BaseLevel {
     });
     this.addChunks(chunk);
 
-    const projectileSystem = new ProjectileSystem({
-      scene: this,
-      direction: "topToBottom",
-      numberOfProjectilesEachSpawn: 10,
-      projectileSpeed: 10,
-      spawnInterval: 1000,
-      startPosition: { x: 50, y: 100 },
-      projectileSize: { width: 10, height: 10 },
-    });
-
-    const projectileSystem2 = new ProjectileSystem({
-      scene: this,
-      direction: "bottomToTop",
-      numberOfProjectilesEachSpawn: 10,
-      projectileSpeed: 10,
-      spawnInterval: 1000,
-      startPosition: { x: 50, y: 600 },
-      projectileSize: { width: 10, height: 10 },
-    });
-
-    //this.addProjectileSystem(projectileSystem);
-    //this.addProjectileSystem(projectileSystem2);
-
     super.create();
   }
 }

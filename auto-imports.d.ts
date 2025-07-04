@@ -53,7 +53,6 @@ declare global {
   const createStaticObstacles: typeof import('./src/factories/obstacle-factory')['createStaticObstacles']
   const createWallJumpChunk: typeof import('./src/scenes/level-chunks/WallJumpChunk')['createWallJumpChunk']
   const createWallObstacleElement: typeof import('./src/factories/level-design-element-factory')['createWallObstacleElement']
-  const default: typeof import('phaser')['default']
   const getClosestPointToSource: typeof import('./src/utils/obstacle')['getClosestPointToSource']
   const getClosestPointToSourceWithAngle: typeof import('./src/utils/obstacle')['getClosestPointToSourceWithAngle']
   const getColisionSide: typeof import('./src/utils/collision')['getColisionSide']

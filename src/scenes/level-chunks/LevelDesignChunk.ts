@@ -4,7 +4,11 @@ import type { LevelDesignElement } from "../../types/LevelDesignElement";
 import { Obstacle } from "../../entities/Obstacle";
 import { Gem } from "../../entities/Gem";
 import { DamagingObstacle } from "../../entities/DamagingObstacles";
-import type { ProjectileSystemOptions } from "../../systems/projectile-system/projectile-system";
+import {
+  ProjectileSystem,
+  type ProjectileSystemOptions,
+} from "../../systems/projectile-system/projectile-system";
+import { BaseLevel } from "../BaseLevel";
 
 export interface LevelDesignChunkOptions {
   scene: Phaser.Scene;
@@ -80,8 +84,15 @@ export class LevelDesignChunk {
   }
 
   get bottom() {
-    const lastItem = this._elements.toSorted((a, b) => a.y - b.y)[
-      this._elements.length - 1
+    const elementsWithPosition = this._elements.filter(
+      (element): element is Obstacle | DamagingObstacle | Gem =>
+        element.name === "obstacle" ||
+        element.name === "damagingObstacle" ||
+        element.name === "gem",
+    );
+
+    const lastItem = elementsWithPosition.toSorted((a, b) => a.y - b.y)[
+      elementsWithPosition.length - 1
     ];
     if (!lastItem) return 0;
     if (lastItem.name === "obstacle") {

@@ -27,10 +27,12 @@ export class Ground extends Phaser.Physics.Matter.Sprite {
     this.setRectangle(options.width, options.height, {
       isStatic: true,
     });
+  }
 
-    this.setOnCollide(
-      (event: Phaser.Types.Physics.Matter.MatterCollisionPair) =>
-        this.onCollide(event),
-    );
+  destroy(fromScene?: boolean): void {
+    if (this.tileSprite) {
+      this.tileSprite.destroy();
+    }
+    super.destroy(fromScene);
   }
 }

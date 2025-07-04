@@ -4,6 +4,7 @@
  */
 
 import type { Princess } from "../entities/Princess";
+import type { Player } from "../entities/Player";
 
 export class PrincessIndicator {
   private princessIndicator: Phaser.GameObjects.Text;
@@ -21,8 +22,6 @@ export class PrincessIndicator {
 
     this.princess = scene.children.getByName("princess") as Princess;
   }
-
-  private createArrow() {}
 
   update(groundY: number) {
     if (!this.princess) return;

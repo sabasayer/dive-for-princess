@@ -20,4 +20,5 @@ export const SPRITESHEET_FRAMES = {
   damaging: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 11 + 30,
   projectile: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 10 + 15,
   gem: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 4 + 23,
+  ground: (DIMENSIONS.spriteSheet.horizontalFrames - 1) * 10 + 15,
 };

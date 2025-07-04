@@ -46,14 +46,12 @@ export class BoundaryWallsChunk extends LevelDesignChunk {
         y: lastObstaclePosition,
         width: dimensions.width,
         height: dimensions.height,
-        physicsType: "static",
       });
       const rightObstacle = createDamagingObstacleElement({
         x: levelWidth - 8,
         y: lastObstaclePosition,
         width: dimensions.width,
         height: dimensions.height,
-        physicsType: "static",
       });
       obstacles.push(leftObstacle, rightObstacle);
     }

@@ -424,7 +424,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
 
   private updateDebugInfo() {
     if (this.debugText) {
-      this.debugText.setText(`State: ${this.wallRunningSystem.state}`);
+      this.debugText.setText(`State: ${this.playerState}`);
     }
   }
 

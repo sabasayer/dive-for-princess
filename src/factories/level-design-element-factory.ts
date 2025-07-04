@@ -15,10 +15,7 @@ export const createDamagingObstacleElement = (
 ): LevelDesignElement => {
   return {
     type: "damagingObstacle",
-    damagingObstacle: {
-      ...options,
-      physicsType: options.physicsType,
-    },
+    damagingObstacle: options,
   };
 };
 
